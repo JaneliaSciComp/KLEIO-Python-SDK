@@ -1,3 +1,9 @@
+.eggs/
+*.egg-info/
+build/
+dist/
+*/__pycache__/
+
 .idea/
 *.iml
 
