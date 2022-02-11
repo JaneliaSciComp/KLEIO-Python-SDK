@@ -1,0 +1,8 @@
+six~=1.16.0
+attrs~=21.4.0
+pytest~=6.2.5
+pluggy~=1.0.0
+py~=1.11.0
+setuptools~=58.0.4
+h5py~=2.10.0
+numpy~=1.22.2
