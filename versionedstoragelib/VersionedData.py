@@ -42,6 +42,8 @@ class VersionedData(object):
         master_path = os.path.join(os.path.join(self.root_path, "branches"), "master.h5")
         return h5py.File(master_path, "r")["vdata"]
 
+    def write(self,data,position):
+        pass
 
 def open_versioned_data(root_path: str) -> VersionedData:
     metadata = read_metadata(root_path)
