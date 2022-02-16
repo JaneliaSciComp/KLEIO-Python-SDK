@@ -15,7 +15,7 @@ def get_grid_dimensions(dimension, chunk_size):
     return result
 
 
-class VersionedData(object):
+class VersionedZarrData(object):
 
     def __init__(self, root_path: str, dimension: [int], chunk_size: [int]):
         self.root_path = root_path
