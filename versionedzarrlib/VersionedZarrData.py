@@ -4,6 +4,7 @@ import shutil
 import numpy as np
 import zarr
 
+from .GitLib import GitInstance
 from .Metadata import Metadata, read_metadata
 
 
@@ -25,6 +26,7 @@ class VersionedZarrData(object):
         self.chunk_size = chunk_size
         self.grid_dimensions = get_grid_dimensions(dimension, chunk_size)
         print('Grid dimensions: {}'.format(self.grid_dimensions))
+        self.git = GitInstance(self.dataset_file)
 
     def create(self, overwrite=False):
         print("Start file creation ..")
@@ -48,36 +50,41 @@ class VersionedZarrData(object):
     def create_dataset(self):
         zarr.open(self.dataset_file, shape=self.grid_dimensions, chunks=(1, 1, 1), mode='w-',
                   dtype="i8")
-        # TODO create git server inside
+        self.git.init()
 
     def get_chunk(self, grid_position):
         A = zarr.open(self.dataset_file, mode='r')
         file_id = A[grid_position]
-        print("raw file for {} is {}".format(grid_position,file_id))
+        print("raw file for {} is {}".format(grid_position, file_id))
         if file_id > 0:
             return self.get_file(file_id)[:]
         else:
             print("No data valid for position: {}".format(grid_position))
         return np.zeros(self.chunk_size, dtype=np.uint64)
 
-    def write(self, data, position):
+    def write_block(self, data, grid_position):
         total_blocks: np.uint64 = len(os.listdir(self.raw_folder))
         new_file = os.path.join(self.raw_folder, "{}.zarr".format(total_blocks))
         print("New file {}".format(new_file))
         A = zarr.open(new_file, shape=self.chunk_size, chunks=self.chunk_size, mode='w-', dtype=data.dtype)
         A[:] = data
         Z = zarr.open(self.dataset_file, mode='a')
-        Z[position] = total_blocks
+        print("Writing {}".format(grid_position))
+        Z[grid_position] = total_blocks
+        self.git.commit("Add {} at {}".format(total_blocks, grid_position))
 
     def read(self):
-        return zarr.open(self.dataset_file,mode='r')
+        return zarr.open(self.dataset_file, mode='r')
 
     def get_file(self, file_id: str):
         file_path = os.path.join(self.raw_folder, "{}.zarr".format(file_id))
         return zarr.open(file_path, mode='r')
 
+    def get_grid(self):
+        return self.grid_dimensions
 
-def open_versioned_data(root_path: str) -> VersionedData:
+
+def open_versioned_data(root_path: str) -> VersionedZarrData:
     metadata = read_metadata(root_path)
-    data = VersionedData(root_path=root_path, dimension=metadata.dimension, chunk_size=metadata.chunk_size)
+    data = VersionedZarrData(root_path=root_path, dimension=metadata.dimension, chunk_size=metadata.chunk_size)
     return data

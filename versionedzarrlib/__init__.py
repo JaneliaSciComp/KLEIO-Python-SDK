@@ -1,1 +1,1 @@
-from .VersionedData import VersionedData, open_versioned_data
+from .VersionedZarrData import VersionedZarrData, open_versioned_data
