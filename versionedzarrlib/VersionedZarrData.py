@@ -52,6 +52,10 @@ class VersionedZarrData(object):
                   dtype="i8")
         self.git.init()
 
+    def get_ids(self):
+        A = zarr.open(self.dataset_file, mode='r')
+        return A[:]
+
     def get_chunk(self, grid_position):
         A = zarr.open(self.dataset_file, mode='r')
         file_id = A[grid_position]
