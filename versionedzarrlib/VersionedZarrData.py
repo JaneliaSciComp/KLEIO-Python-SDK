@@ -1,5 +1,6 @@
 import os
 import shutil
+import threading
 
 import numpy as np
 import zarr
@@ -7,6 +8,7 @@ import zarr
 from .GitLib import GitInstance
 from .Metadata import Metadata, read_metadata
 
+threadLock = threading.Lock()
 
 def get_grid_dimensions(dimension, chunk_size):
     result = []
@@ -67,7 +69,7 @@ class VersionedZarrData(object):
         return np.zeros(self.chunk_size, dtype=np.uint64)
 
     def write_block(self, data, grid_position):
-        total_blocks: np.uint64 = len(os.listdir(self.raw_folder))
+        total_blocks: np.uint64 = self.get_new_chunk_index()
         new_file = os.path.join(self.raw_folder, "{}.zarr".format(total_blocks))
         print("New file {}".format(new_file))
         A = zarr.open(new_file, shape=self.chunk_size, chunks=self.chunk_size, mode='w-', dtype=data.dtype)
@@ -86,6 +88,23 @@ class VersionedZarrData(object):
 
     def get_grid(self):
         return self.grid_dimensions
+
+    def block_exists(self, grid_position):
+        Z = zarr.open(self.dataset_file, mode='a')
+        if Z[grid_position] > 0 :
+            return 1
+        else:
+            return 0
+
+
+    def get_new_chunk_index(self):
+        threadLock.acquire()
+        metadata = read_metadata(self.root_path)
+        x = metadata.next_chunk()
+        metadata.save(self.root_path)
+        threadLock.release()
+        return x
+    # todo change to from metadata
 
 
 def open_versioned_data(root_path: str) -> VersionedZarrData:

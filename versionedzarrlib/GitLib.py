@@ -27,3 +27,12 @@ class GitInstance(object):
     def checkout_commit(self, commit_id):
         repo = Repo.init(self.root_path)
         repo.git.checkout(commit_id)
+
+    def checkout_branch(self, branch_name: str, create: bool = False):
+        repo = Repo.init(self.root_path)
+        if create:
+            print("Create new branch: {}".format(branch_name))
+            repo.git.checkout('-b', branch_name)
+        else:
+            print("Moved to branch: {}".format(branch_name))
+            repo.git.checkout(branch_name)
