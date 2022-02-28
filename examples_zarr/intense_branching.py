@@ -17,7 +17,7 @@ data.create(overwrite=True)
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
 initiated_branches = [True, False, False, False, False, False, False]
 
-# data.git.checkout_branch(branches[1], create=True)
+data.git.checkout_branch("dev", create=True)
 
 # dummy_data = np.ones(data.chunk_size, dtype='i8')
 dummy_data = np.zeros(data.chunk_size, dtype='i8')

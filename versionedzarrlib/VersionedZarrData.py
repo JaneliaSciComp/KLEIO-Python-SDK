@@ -10,6 +10,7 @@ from .Metadata import Metadata, read_metadata
 
 threadLock = threading.Lock()
 
+
 def get_grid_dimensions(dimension, chunk_size):
     result = []
     for i in range(len(dimension)):
@@ -45,13 +46,13 @@ class VersionedZarrData(object):
         os.mkdir(self.root_path)
         os.mkdir(self.raw_folder)
         metadata = Metadata(dimension=self.dimension, grid_dimension=self.grid_dimensions, chunk_size=self.chunk_size)
-        self.create_dataset()
+        self.create_dataset(z=self.dimension[2])
         metadata.save(self.root_path)
         print("File successfully created!")
 
-    def create_dataset(self):
-        zarr.open(self.dataset_file, shape=self.grid_dimensions, chunks=(1, 1, 1), mode='w-',
-                  dtype="i8")
+    def create_dataset(self, z=1):
+        zarr.open(self.dataset_file, shape=self.grid_dimensions, chunks=(1, 1, z), mode='w-',
+                  dtype=np.uint64)
         self.git.init()
 
     def get_ids(self):
@@ -91,11 +92,10 @@ class VersionedZarrData(object):
 
     def block_exists(self, grid_position):
         Z = zarr.open(self.dataset_file, mode='a')
-        if Z[grid_position] > 0 :
+        if Z[grid_position] > 0:
             return 1
         else:
             return 0
-
 
     def get_new_chunk_index(self):
         threadLock.acquire()
