@@ -7,9 +7,9 @@ sys.path.append('../')
 
 from versionedzarrlib import VersionedZarrData
 
-root_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
+root_path = "/Volumes/ramdisk/versioned_data"
 
-dims = (6000, 6000, 6000)
+dims = (600, 600, 600)
 chunk_size = (128, 128, 128)
 data = VersionedZarrData(root_path, dimension=dims, chunk_size=chunk_size)
 data.create(overwrite=True)
@@ -27,7 +27,7 @@ output_log = "/Users/Marwan/Desktop/activelearning/data/20220218_branching_time.
 
 log = open(output_log, "a")
 
-for i in range(100000):
+for i in range(10000):
     print(initiated_branches)
     current_branch = random.randint(0, len(branches) - 1)
     start = time.time()

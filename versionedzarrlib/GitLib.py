@@ -36,3 +36,7 @@ class GitInstance(object):
         else:
             print("Moved to branch: {}".format(branch_name))
             repo.git.checkout(branch_name)
+
+    def gc(self):
+        repo = Repo.init(self.root_path)
+        repo.git.gc()
