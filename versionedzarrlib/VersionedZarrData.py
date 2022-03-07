@@ -1,6 +1,7 @@
 import os
 import shutil
 import threading
+from pathlib import Path
 
 import numpy as np
 import zarr
@@ -10,18 +11,36 @@ from .Metadata import Metadata, read_metadata
 
 threadLock = threading.Lock()
 
+ONE_CHUNK_MODE = 0
+FLAT_Z_MODE = 1
+ALL_IN_ONE_CHUNK_MODE = 2
+
 
 def get_grid_dimensions(dimension, chunk_size):
     result = []
     for i in range(len(dimension)):
-        result.append(int(dimension[i] / chunk_size[i]))
-    #         TODO fix edge chunks
+        val = int(dimension[i] / chunk_size[i])
+        if dimension[i] % chunk_size[i] > 0:
+            val = val + 1
+        result.append(val)
     return result
+
+
+def get_metadata_chunk(mode, grid_dimensions):
+    if mode == ONE_CHUNK_MODE:
+        return 1, 1, 1
+    elif mode == FLAT_Z_MODE:
+        return 1, 1, grid_dimensions[2]
+    elif mode == ALL_IN_ONE_CHUNK_MODE:
+        return grid_dimensions
+    else:
+        print("Invalid mode: " + mode)
+        return 1, 1, 1
 
 
 class VersionedZarrData(object):
 
-    def __init__(self, root_path: str, dimension: [int], chunk_size: [int]):
+    def __init__(self, root_path: str, dimension: [int], chunk_size: [int], mode=0):
         self.root_path = root_path
         self.dataset_file = os.path.join(self.root_path, "dataset.zarr")
         self.raw_folder = os.path.join(self.root_path, "raw/")
@@ -30,6 +49,8 @@ class VersionedZarrData(object):
         self.grid_dimensions = get_grid_dimensions(dimension, chunk_size)
         print('Grid dimensions: {}'.format(self.grid_dimensions))
         self.git = GitInstance(self.dataset_file)
+        self.mode = mode
+        print("Mode: " + str(mode))
 
     def create(self, overwrite=False):
         print("Start file creation ..")
@@ -46,12 +67,13 @@ class VersionedZarrData(object):
         os.mkdir(self.root_path)
         os.mkdir(self.raw_folder)
         metadata = Metadata(dimension=self.dimension, grid_dimension=self.grid_dimensions, chunk_size=self.chunk_size)
-        self.create_dataset(z=self.dimension[2])
+        meta_size = get_metadata_chunk(mode=self.mode, grid_dimensions=self.grid_dimensions)
+        self.create_dataset(chunk_size=meta_size)
         metadata.save(self.root_path)
         print("File successfully created!")
 
-    def create_dataset(self, z=1):
-        zarr.open(self.dataset_file, shape=self.grid_dimensions, chunks=(1, 1, z), mode='w-',
+    def create_dataset(self, chunk_size):
+        zarr.open(self.dataset_file, shape=self.grid_dimensions, chunks=chunk_size, mode='w-',
                   dtype=np.uint64)
         self.git.init()
 
@@ -104,7 +126,10 @@ class VersionedZarrData(object):
         metadata.save(self.root_path)
         threadLock.release()
         return x
-    # todo change to from metadata
+
+    def get_size(self):
+        root_directory = Path(self.root_path)
+        return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
 
 def open_versioned_data(root_path: str) -> VersionedZarrData:

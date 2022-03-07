@@ -40,6 +40,6 @@ for i in range(10000):
         random.randint(0, grid[0] - 1), random.randint(0, grid[1] - 1), random.randint(0, grid[2] - 1))
     start = time.time()
     exists = data.block_exists(grid_position=grid_position)
-    data.write_block(dummy_data, grid_position=grid_position)
+    data.write_block(data=dummy_data, grid_position=grid_position)
     write_time = time.time() - start
     log.write("{};{};{};{}\n".format(checkout_time, write_time, branches[current_branch], exists))

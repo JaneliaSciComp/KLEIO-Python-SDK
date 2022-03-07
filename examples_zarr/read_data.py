@@ -14,7 +14,10 @@ data = open_versioned_data(root_path)
 
 # print(data.read())
 
-print(data.get_ids())
+# print(data.get_ids())
+print(data.get_size())
+# data.git.gc()
+# print(data.get_size())
 # x = data.get_chunk((1,3,2))
 # print(x)
 #

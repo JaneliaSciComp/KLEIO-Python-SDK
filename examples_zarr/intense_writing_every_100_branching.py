@@ -5,13 +5,15 @@ import time
 
 sys.path.append('../')
 
-from versionedzarrlib import VersionedZarrData
+from versionedzarrlib import *
 
 root_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
 
-dims = (6000, 6000, 6000)
+dims = (600, 600, 600)
 chunk_size = (128, 128, 128)
-data = VersionedZarrData(root_path, dimension=dims, chunk_size=chunk_size)
+step = [100, 1000, 10000, 50000, 100000]
+
+data = VersionedZarrData(root_path=root_path, dimension=dims, chunk_size=chunk_size, mode=ONE_CHUNK_MODE)
 data.create(overwrite=True)
 
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
@@ -23,7 +25,7 @@ initiated_branches = [True, False, False, False, False, False, False]
 dummy_data = np.zeros(data.chunk_size, dtype='i8')
 grid = data.get_grid()
 
-output_log = "/Users/Marwan/Desktop/activelearning/data/20220218_branching_time_50_500.csv"
+output_log = "/Users/Marwan/Desktop/activelearning/data/20220303_git_gc.csv"
 
 log = open(output_log, "a")
 branching_step = random.randint(50, 500)
