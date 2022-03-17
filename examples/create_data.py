@@ -12,7 +12,7 @@ dims = (600, 600, 600)
 chunk_size = (128, 128, 128)
 data = VersionedData(path=root_path, shape=dims, raw_chunk_size=chunk_size)
 data.create(overwrite=True)
-z = zarr.open(data)
+z = zarr.open(store=data)
 print("opened")
 print(z.info)
 z[500, 500, 500] = 5

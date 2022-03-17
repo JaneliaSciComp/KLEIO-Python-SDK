@@ -4,11 +4,11 @@ from pathlib import Path
 
 import numpy as np
 import zarr
-from zarr.storage import DirectoryStore, NestedDirectoryStore
-from zarr.util import normalize_storage_path
-from .util import fromfile, tofile
+from zarr.storage import NestedDirectoryStore
+
 from .GitLib import GitInstance
 from .Metadata import Metadata
+from .util import fromfile, tofile
 
 index_dataset_name = "dataset.zarr"
 raw_folder = "raw/"
@@ -64,7 +64,7 @@ class VersionedData(NestedDirectoryStore):
         self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
                             chunk_size=self.index_chunk_size)
         metadata.create_like(path=self.path, like=os.path.join(self.path, index_dataset_name))
-        print("File successfully created!")
+        print("Dataset created!")
 
     def create_dataset(self, path, shape, chunk_size):
         zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
@@ -84,6 +84,7 @@ class VersionedData(NestedDirectoryStore):
         else:
             print("No data valid for position: {}".format(grid_position))
         return np.zeros(self.chunk_size, dtype=np.uint64)
+
     #
     # def write_block(self, data, grid_position):
     #     new_chunk_index: np.uint64 = Metadata.next_chunk(path=self.path)
@@ -128,10 +129,11 @@ class VersionedData(NestedDirectoryStore):
             k = normalize_key(key, self.dimension_separator)
             Z = zarr.open(os.path.join(self.path, index_dataset_name))
             position = Z[k]
-            file_to_open = os.path.join(os.path.join(self.path, raw_folder), "{}".format(position))
-            print(file_to_open)
-            if os.path.exists(file_to_open):
-                return fromfile(file_to_open)
+            if position > 0:
+                file_to_open = os.path.join(os.path.join(self.path, raw_folder), "{}".format(position))
+                print("File to open:" + file_to_open)
+                if os.path.exists(file_to_open):
+                    return fromfile(file_to_open)
 
         return super().__getitem__(key)
 

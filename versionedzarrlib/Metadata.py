@@ -13,7 +13,7 @@ file_name = ".zarray"
 
 class Metadata(Metadata2):
 
-    def __init__(self, shape: [int], chunks: [int], total_chunks: np.int64 = 0, dtype=None):
+    def __init__(self, shape: [int], chunks: [int], total_chunks: np.int64 = 1, dtype=None):
         self.dtype = np.dtype(dtype)
         self.shape = shape
         self.chunks = chunks
@@ -31,7 +31,7 @@ class Metadata(Metadata2):
         meta = Metadata2.decode_array_metadata(meta_bytes)
 
         meta_encoded = self.encode_array_metadata(meta)
-        print(meta_encoded)
+        print(self.decode_array_metadata(meta_encoded))
         tofile(meta_encoded, os.path.join(path, file_name))
 
     def encode_array_metadata(self, meta) -> bytes:
