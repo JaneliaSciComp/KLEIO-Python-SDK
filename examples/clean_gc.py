@@ -9,11 +9,11 @@ from versionedzarrlib import *
 
 root_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
 
-dims = (600, 600, 600)
+dims = (128000, 128000, 128000)
 chunk_size = (128, 128, 128)
 steps = [100, 500, 1000]
 checkout_step = 100
-modes = [ONE_CHUNK_MODE,    ALL_IN_ONE_CHUNK_MODE]
+modes = [   ALL_IN_ONE_CHUNK_MODE]
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
 
 for mode in modes:
@@ -29,10 +29,10 @@ for mode in modes:
     grid = data.get_grid()
     ts = time.time()
 
-    output_log = "/Users/Marwan/Desktop/activelearning/data/20220303_"+str(ts)+"_git_intance_gc_mode__" + str(mode) +".csv"
+    output_log = "/Users/Marwan/Desktop/activelearning/data/20220303_"+str(ts)+"_git_intance_gc_mode_100_" + str(mode) +".csv"
     log = open(output_log, "a")
 
-    output_log = "/Users/Marwan/Desktop/activelearning/data/20220303_"+str(ts)+"_git_intance_gc_only_" + str(mode) + "step_" + ".csv"
+    output_log = "/Users/Marwan/Desktop/activelearning/data/20220303_"+str(ts)+"_git_intance_gc_only_100_" + str(mode) + "step_" + ".csv"
     log_gc = open(output_log, "a")
     # checkout_i = 0
     current_branch = random.randint(0, len(branches) - 1)

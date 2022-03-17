@@ -1,79 +1,73 @@
 import os
 import shutil
-import threading
 from pathlib import Path
 
 import numpy as np
 import zarr
-
+from zarr.storage import DirectoryStore, NestedDirectoryStore
+from zarr.util import normalize_storage_path
+from .util import fromfile, tofile
 from .GitLib import GitInstance
-from .Metadata import Metadata, read_metadata
+from .Metadata import Metadata
 
-threadLock = threading.Lock()
-
-ONE_CHUNK_MODE = 0
-FLAT_Z_MODE = 1
-ALL_IN_ONE_CHUNK_MODE = 2
+index_dataset_name = "dataset.zarr"
+raw_folder = "raw/"
 
 
-def get_grid_dimensions(dimension, chunk_size):
-    result = []
-    for i in range(len(dimension)):
-        val = int(dimension[i] / chunk_size[i])
-        if dimension[i] % chunk_size[i] > 0:
-            val = val + 1
-        result.append(val)
-    return result
+class VersionedData(NestedDirectoryStore):
 
+    def __init__(self, path: str,
+                 shape: [int],
+                 raw_chunk_size: [int],
+                 index_chunk_size: [int] = None,
+                 dtype=np.int8,
+                 normalize_keys=False,
+                 key_separator=None,
+                 mode='w',
+                 dimension_separator="/"):
 
-def get_metadata_chunk(mode, grid_dimensions):
-    if mode == ONE_CHUNK_MODE:
-        return 1, 1, 1
-    elif mode == FLAT_Z_MODE:
-        return 1, 1, grid_dimensions[2]
-    elif mode == ALL_IN_ONE_CHUNK_MODE:
-        return grid_dimensions
-    else:
-        print("Invalid mode: " + mode)
-        return 1, 1, 1
+        self.normalize_keys = normalize_keys
+        self.dimension_separator = dimension_separator
+        self.path = path
+        self.shape = shape
+        self.raw_chunk_size = raw_chunk_size
+        if index_chunk_size is not None:
+            self.index_chunk_size = index_chunk_size
+        else:
+            self.index_chunk_size = [1] * len(shape)
 
-
-class VersionedZarrData(object):
-
-    def __init__(self, root_path: str, dimension: [int], chunk_size: [int], mode=0):
-        self.root_path = root_path
-        self.dataset_file = os.path.join(self.root_path, "dataset.zarr")
-        self.raw_folder = os.path.join(self.root_path, "raw/")
-        self.dimension = dimension
-        self.chunk_size = chunk_size
-        self.grid_dimensions = get_grid_dimensions(dimension, chunk_size)
-        print('Grid dimensions: {}'.format(self.grid_dimensions))
-        self.git = GitInstance(self.dataset_file)
+        self._dimension_separator = dimension_separator
+        self.dtype = dtype
+        self.index_chunk_size = index_chunk_size
         self.mode = mode
-        print("Mode: " + str(mode))
+
+        self.index_matrix_dimension = self.get_grid_dimensions(self.shape, self.raw_chunk_size)
+        print('Grid dimensions: {}'.format(self.index_matrix_dimension))
+        self.git = GitInstance(os.path.join(path, index_dataset_name))
 
     def create(self, overwrite=False):
         print("Start file creation ..")
-        if os.path.exists(self.root_path):
+        if os.path.exists(self.path):
             print("File already exists ! ")
             if overwrite:
                 print("File will be deleted !")
                 try:
-                    shutil.rmtree(self.root_path)
+                    shutil.rmtree(self.path)
                 except OSError as e:
                     print("Error: %s - %s." % (e.filename, e.strerror))
             else:
                 return
-        os.mkdir(self.root_path)
-        os.mkdir(self.raw_folder)
-        metadata = Metadata(dimension=self.dimension, grid_dimension=self.grid_dimensions, chunk_size=self.chunk_size)
-        meta_size = get_metadata_chunk(mode=self.mode, grid_dimensions=self.grid_dimensions)
-        self.create_dataset(chunk_size=meta_size)
-        metadata.save(self.root_path)
+        os.mkdir(self.path)
+        os.mkdir(os.path.join(self.path, raw_folder))
+
+        metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.dtype)
+        self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
+                            chunk_size=self.index_chunk_size)
+        metadata.create_like(path=self.path, like=os.path.join(self.path, index_dataset_name))
         print("File successfully created!")
 
-    def create_dataset(self, chunk_size):
-        zarr.open(self.dataset_file, shape=self.grid_dimensions, chunks=chunk_size, mode='w-',
+    def create_dataset(self, path, shape, chunk_size):
+        zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
                   dtype=np.uint64)
         self.git.init()
 
@@ -90,17 +84,19 @@ class VersionedZarrData(object):
         else:
             print("No data valid for position: {}".format(grid_position))
         return np.zeros(self.chunk_size, dtype=np.uint64)
-
-    def write_block(self, data, grid_position):
-        total_blocks: np.uint64 = self.get_new_chunk_index()
-        new_file = os.path.join(self.raw_folder, "{}.zarr".format(total_blocks))
-        print("New file {}".format(new_file))
-        A = zarr.open(new_file, shape=self.chunk_size, chunks=self.chunk_size, mode='w-', dtype=data.dtype)
-        A[:] = data
-        Z = zarr.open(self.dataset_file, mode='a')
-        print("Writing {}".format(grid_position))
-        Z[grid_position] = total_blocks
-        self.git.commit("Add {} at {}".format(total_blocks, grid_position))
+    #
+    # def write_block(self, data, grid_position):
+    #     new_chunk_index: np.uint64 = Metadata.next_chunk(path=self.path)
+    #     new_file = os.path.join(os.path.join(self.path, raw_folder), "{}.npy".format(new_chunk_index))
+    #     print("New file {}".format(new_file))
+    #     # A = zarr.open(new_file, shape=self.raw_chunk_size,chunks= self.raw_chunk_size,  mode='w-', dtype=data.dtype)
+    #     # A[:] = data
+    #     np.save(new_file,data)
+    #     # tofile(data, new_file)
+    #     Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
+    #     print("Writing {}".format(grid_position))
+    #     Z[grid_position] = new_chunk_index
+    #     self.git.commit("Add {} at {}".format(new_chunk_index, grid_position))
 
     def read(self):
         return zarr.open(self.dataset_file, mode='r')
@@ -119,20 +115,62 @@ class VersionedZarrData(object):
         else:
             return 0
 
-    def get_new_chunk_index(self):
-        threadLock.acquire()
-        metadata = read_metadata(self.root_path)
-        x = metadata.next_chunk()
-        metadata.save(self.root_path)
-        threadLock.release()
-        return x
+    def get_total_chunks(self):
+        metadata = Metadata.read_metadata(self.root_path)
+        return metadata.total_chunks
 
     def get_size(self):
-        root_directory = Path(self.root_path)
+        root_directory = Path(self.path)
         return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
+    def __getitem__(self, key):
+        if is_chunk_key(key):
+            k = normalize_key(key, self.dimension_separator)
+            Z = zarr.open(os.path.join(self.path, index_dataset_name))
+            position = Z[k]
+            file_to_open = os.path.join(os.path.join(self.path, raw_folder), "{}".format(position))
+            print(file_to_open)
+            if os.path.exists(file_to_open):
+                return fromfile(file_to_open)
 
-def open_versioned_data(root_path: str) -> VersionedZarrData:
-    metadata = read_metadata(root_path)
-    data = VersionedZarrData(root_path=root_path, dimension=metadata.dimension, chunk_size=metadata.chunk_size)
-    return data
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if is_chunk_key(key):
+            new_chunk_index: np.uint64 = Metadata.next_chunk(path=self.path)
+            new_file = os.path.join(os.path.join(self.path, raw_folder), "{}".format(new_chunk_index))
+            print("New file {}".format(new_file))
+            tofile(value, new_file)
+
+            grid_position = normalize_key(key, self.dimension_separator)
+            Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
+            print("Writing {}".format(grid_position))
+            Z[grid_position] = new_chunk_index
+            self.git.commit("Add {} at {}".format(new_chunk_index, grid_position))
+        else:
+            super().__setitem__(key, value)
+
+    @staticmethod
+    def get_grid_dimensions(dimension, chunk_size):
+        result = []
+        for i in range(len(dimension)):
+            val = int(dimension[i] / chunk_size[i])
+            if dimension[i] % chunk_size[i] > 0:
+                val = val + 1
+            result.append(val)
+        return result
+
+    @staticmethod
+    def open_versioned_data(path: str):
+        metadata = Metadata.read_metadata(path)
+        data = VersionedData(path=path, shape=metadata.shape, raw_chunk_size=metadata.chunks,
+                             dtype=metadata.dtype)
+        return data
+
+
+def is_chunk_key(key):
+    return str(key).__contains__('/')
+
+
+def normalize_key(key, dimension_separator):
+    return tuple([int(i) for i in str(key).split(dimension_separator)])
