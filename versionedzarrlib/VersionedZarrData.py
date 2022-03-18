@@ -122,6 +122,7 @@ class VersionedData(NestedDirectoryStore):
 
     def get_size(self):
         root_directory = Path(self.path)
+        # command du
         return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
     def __getitem__(self, key):
