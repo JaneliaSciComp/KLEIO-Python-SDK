@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 
-sys.path.append('../')
+sys.path.append('../../')
 
 from versionedzarrlib import *
 
@@ -67,7 +67,7 @@ for i in range(iterations):
     b.start_element(Get_new_index_time)
     index = data.get_next_index()
     b.done_element()
-    pos = (random.randint(0, 1000), random.randint(0, 1000), random.randint(0, 1000))
+    pos = (random.randint(0, dims[0]-1), random.randint(0, dims[1]-1), random.randint(0, dims[2]-1))
     b.start_element(Write_raw_data_time)
     data.save_raw(dummy_data, pos)
     b.done_element()
