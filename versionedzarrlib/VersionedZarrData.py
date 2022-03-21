@@ -25,12 +25,14 @@ class VersionedData(NestedDirectoryStore):
                  normalize_keys=False,
                  key_separator=None,
                  mode='w',
+                 index_compression = True,
                  dimension_separator="/"):
 
         self.normalize_keys = normalize_keys
         self.dimension_separator = dimension_separator
         self.path = path
         self.shape = shape
+        self.index_compression = index_compression
         self.raw_chunk_size = raw_chunk_size
         if index_chunk_size is not None:
             self.index_chunk_size = index_chunk_size
@@ -63,13 +65,17 @@ class VersionedData(NestedDirectoryStore):
 
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.dtype)
         self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
-                            chunk_size=self.index_chunk_size)
+                            chunk_size=self.index_chunk_size,compression = self.index_compression)
         metadata.create_like(path=self.path, like=os.path.join(self.path, index_dataset_name))
         print("Dataset created!")
 
-    def create_dataset(self, path, shape, chunk_size):
-        zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
+    def create_dataset(self, path, shape, chunk_size, compression : bool):
+        if compression:
+            zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
                   dtype=np.uint64)
+        else:
+            zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
+                      dtype=np.uint64,compression=None)
         self.git.init()
 
     def get_ids(self):
