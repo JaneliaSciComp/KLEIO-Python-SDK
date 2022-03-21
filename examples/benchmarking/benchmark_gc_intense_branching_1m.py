@@ -7,7 +7,7 @@ sys.path.append('../')
 
 from versionedzarrlib import *
 
-folder_path = "/Users/Marwan/Desktop/activelearning/benchmarks"
+benchmark_path = "/Users/Marwan/Desktop/activelearning/benchmarks"
 data_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
 dims = (1000, 1000, 1000)
 raw_chunk_size = (1, 1, 1)
@@ -21,10 +21,12 @@ data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size, 
 data.create(overwrite=True)
 
 size_benchmark = Benchmarking(
-    Benchmarking.create_path(current_folder=folder_path, type=Type_size, extra="1M_checkout_50_1000p3"))
-
+    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra="1M_checkout_50_1000p3"))
+size_benchmark.write_line(SizeBenchmark.get_header())
 time_benchmark = Benchmarking(
-    Benchmarking.create_path(current_folder=folder_path, type=Type_Time, extra="1M_checkout_50_1000p3"))
+    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra="1M_checkout_50_1000p3"))
+time_benchmark.write_line(TimeBenchmark.get_header())
+
 
 next_gc = random.randint(50, 500)
 i_gc = 0
@@ -32,7 +34,7 @@ i_checkout = 0
 
 
 def add_size_bench(size_benchmark):
-    size_b = Size_Benchmark()
+    size_b = SizeBenchmark()
     used, available = data.get_df_used_remaining()
     size_b.add(Remaining_space, available)
     size_b.add(Used_Size_df, used)
@@ -43,7 +45,7 @@ def add_size_bench(size_benchmark):
 
 
 for i in range(iterations):
-    b = Time_Benchmark()
+    b = TimeBenchmark()
     i_gc = i_gc + 1
     i_checkout = i_checkout + 1
     if i_gc == next_gc:
@@ -67,7 +69,7 @@ for i in range(iterations):
     b.done_element()
     pos = (random.randint(0, 1000), random.randint(0, 1000), random.randint(0, 1000))
     b.start_element(Write_raw_data_time)
-    data.save_raw(data, pos)
+    data.save_raw(dummy_data, pos)
     b.done_element()
     b.start_element(Writing_index_time)
     data.update_index(index, pos)
