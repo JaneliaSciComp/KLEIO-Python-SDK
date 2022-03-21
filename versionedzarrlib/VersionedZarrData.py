@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -85,19 +86,32 @@ class VersionedData(NestedDirectoryStore):
             print("No data valid for position: {}".format(grid_position))
         return np.zeros(self.chunk_size, dtype=np.uint64)
 
-    #
-    # def write_block(self, data, grid_position):
-    #     new_chunk_index: np.uint64 = Metadata.next_chunk(path=self.path)
-    #     new_file = os.path.join(os.path.join(self.path, raw_folder), "{}.npy".format(new_chunk_index))
-    #     print("New file {}".format(new_file))
-    #     # A = zarr.open(new_file, shape=self.raw_chunk_size,chunks= self.raw_chunk_size,  mode='w-', dtype=data.dtype)
-    #     # A[:] = data
-    #     np.save(new_file,data)
-    #     # tofile(data, new_file)
-    #     Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
-    #     print("Writing {}".format(grid_position))
-    #     Z[grid_position] = new_chunk_index
-    #     self.git.commit("Add {} at {}".format(new_chunk_index, grid_position))
+    def get_next_index(self):
+        return Metadata.next_chunk(path=self.path)
+
+    def save_raw(self, data, index):
+        new_file = os.path.join(os.path.join(self.path, raw_folder), "{}.zarr".format(index))
+        print("New file {}".format(new_file))
+        A = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
+        A[:] = data
+
+    def update_index(self, index, position):
+        Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
+        # print("Writing {}".format(position))
+        Z[position] = index
+
+    def commit(self, message):
+        self.git.commit(message)
+
+    def write_block(self, data, grid_position):
+        new_chunk_index: np.uint64 = self.get_next_index()
+        self.save_raw(data, new_chunk_index)
+
+        # np.save(new_file,data)
+        # tofile(data, new_file)
+        self.update_index(new_chunk_index, grid_position)
+
+        self.commit("Add {} at {}".format(new_chunk_index, grid_position))
 
     def read(self):
         return zarr.open(self.dataset_file, mode='r')
@@ -119,11 +133,6 @@ class VersionedData(NestedDirectoryStore):
     def get_total_chunks(self):
         metadata = Metadata.read_metadata(self.root_path)
         return metadata.total_chunks
-
-    def get_size(self):
-        root_directory = Path(self.path)
-        # command du
-        return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
     def __getitem__(self, key):
         if is_chunk_key(key):
@@ -169,6 +178,26 @@ class VersionedData(NestedDirectoryStore):
         data = VersionedData(path=path, shape=metadata.shape, raw_chunk_size=metadata.chunks,
                              dtype=metadata.dtype)
         return data
+
+    # For Benchmarking
+    def get_df_used_remaining(self):
+        result = subprocess.check_output(["df", self.path]).decode("utf-8").split("\n")[1].split()
+        used = result[2]
+        available = result[3]
+        return used, available
+
+    def du_size(self):
+        all_lines = subprocess.check_output(["du", "-c", self.path]).decode("utf-8").split("\n")
+        result = all_lines[len(all_lines) - 2]
+        if result.__contains__("total"):
+            return result.split()[0]
+        print("Error du !")
+        return 0
+
+    def get_size(self):
+        root_directory = Path(self.path)
+        # command du
+        return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
 
 def is_chunk_key(key):
