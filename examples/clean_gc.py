@@ -33,7 +33,7 @@ for mode in modes:
     log = open(output_log, "a")
 
     output_log = "/Users/Marwan/Desktop/activelearning/data/20220303_"+str(ts)+"_git_intance_gc_only_100_" + str(mode) + "step_" + ".csv"
-    log_gc = open(output_log, "a")
+
     # checkout_i = 0
     current_branch = random.randint(0, len(branches) - 1)
     checkout_time = 0
