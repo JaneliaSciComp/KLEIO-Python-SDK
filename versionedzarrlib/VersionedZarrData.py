@@ -97,7 +97,7 @@ class VersionedData(NestedDirectoryStore):
 
     def save_raw(self, data, index):
         new_file = os.path.join(os.path.join(self.path, raw_folder), "{}.zarr".format(index))
-        print("New file {}".format(new_file))
+        # print("New file {}".format(new_file))
         A = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
         A[:] = data
 

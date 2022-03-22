@@ -118,9 +118,9 @@ class Metadata(Metadata2):
         thread_lock = threading.Lock()
         thread_lock.acquire()
         meta = Metadata.parse_metadata(fromfile(metadata_path))
-        print(meta)
+        # print(meta)
         total_chunk = meta["total_chunks"]
-        print("total: "+str(total_chunk))
+        # print("total: "+str(total_chunk))
         meta["total_chunks"] = total_chunk + 1
         Metadata.save_meta(metadata_path, meta)
         thread_lock.release()

@@ -1,6 +1,6 @@
 import random
 import sys
-
+from tqdm import tqdm
 import numpy as np
 
 sys.path.append('../../')
@@ -15,6 +15,8 @@ index_chunk_size = (1, 1, 1)
 iterations = 1000000
 compress_index = False
 checkout_every = 50
+extra  = "1M_checkout_50_size_1000p3_index_1p3_compression_{}".format(compress_index)
+
 dummy_data = np.zeros(raw_chunk_size, dtype='i8')
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
 initiated_branches = [True, False, False, False, False, False, False]
@@ -23,10 +25,10 @@ data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size, 
 data.create(overwrite=True)
 
 size_benchmark = Benchmarking(
-    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra="1M_checkout_50_size_1000p3_index_1p3_compression_{}".format(compress_index)))
+    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra=extra))
 size_benchmark.write_line(SizeBenchmark.get_header())
 time_benchmark = Benchmarking(
-    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra="1M_checkout_50_1000p3"))
+    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra=extra))
 time_benchmark.write_line(TimeBenchmark.get_header())
 
 next_gc = random.randint(50, 500)
@@ -46,7 +48,7 @@ def add_size_bench(size_benchmark):
     size_benchmark.write_line(size_b.format())
 
 
-for i in range(iterations):
+for i in tqdm(range(iterations)):
     b = TimeBenchmark()
     i_gc = i_gc + 1
     i_checkout = i_checkout + 1
@@ -71,7 +73,7 @@ for i in range(iterations):
     b.done_element()
     pos = (random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1), random.randint(0, dims[2] - 1))
     b.start_element(Write_raw_data_time)
-    data.save_raw(dummy_data, pos)
+    data.save_raw(dummy_data, index)
     b.done_element()
     b.start_element(Writing_index_time)
     data.update_index(index, pos)
