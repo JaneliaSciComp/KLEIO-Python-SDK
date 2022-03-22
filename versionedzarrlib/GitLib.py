@@ -34,7 +34,7 @@ class GitInstance(object):
             print("Create new branch: {}".format(branch_name))
             repo.git.checkout('-b', branch_name)
         else:
-            print("Moved to branch: {}".format(branch_name))
+            # print("Moved to branch: {}".format(branch_name))
             repo.git.checkout(branch_name)
 
     def gc(self):

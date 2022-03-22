@@ -2,19 +2,12 @@ import random
 import sys
 from tqdm import tqdm
 import numpy as np
-
+from .config import *
 sys.path.append('../../')
 
 from versionedzarrlib import *
 
-benchmark_path = "/Users/Marwan/Desktop/activelearning/benchmarks"
-data_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
-dims = (1000, 1000, 1000)
-raw_chunk_size = (1, 1, 1)
-index_chunk_size = (1, 1, 1)
-iterations = 1000000
-compress_index = False
-checkout_every = 50
+
 extra  = "1M_checkout_50_size_1000p3_index_1p3_compression_{}".format(compress_index)
 
 dummy_data = np.zeros(raw_chunk_size, dtype='i8')
