@@ -39,7 +39,8 @@ def add_size_bench(size_benchmark):
     size_b.add(Remaining_space, available)
     size_b.add(Used_Size_df, used)
     size_b.add(Logic_Size, data.get_size())
-    size_b.add(DU_Size, data.du_size())
+    # Remove du, take a lot of time
+    # size_b.add(DU_Size, data.du_size())
 
     size_benchmark.write_line(size_b.format())
 
