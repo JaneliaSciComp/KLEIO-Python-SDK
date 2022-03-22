@@ -13,20 +13,21 @@ dims = (1000, 1000, 1000)
 raw_chunk_size = (1, 1, 1)
 index_chunk_size = (1, 1, 1)
 iterations = 1000000
+compress_index = False
 checkout_every = 50
 dummy_data = np.zeros(raw_chunk_size, dtype='i8')
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
 initiated_branches = [True, False, False, False, False, False, False]
-data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size, index_chunk_size=index_chunk_size)
+data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size, index_chunk_size=index_chunk_size,
+                     index_compression=compress_index)
 data.create(overwrite=True)
 
 size_benchmark = Benchmarking(
-    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra="1M_checkout_50_1000p3"))
+    Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra="1M_checkout_50_size_1000p3_index_1p3_compression_{}".format(compress_index)))
 size_benchmark.write_line(SizeBenchmark.get_header())
 time_benchmark = Benchmarking(
     Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra="1M_checkout_50_1000p3"))
 time_benchmark.write_line(TimeBenchmark.get_header())
-
 
 next_gc = random.randint(50, 500)
 i_gc = 0
@@ -68,7 +69,7 @@ for i in range(iterations):
     b.start_element(Get_new_index_time)
     index = data.get_next_index()
     b.done_element()
-    pos = (random.randint(0, dims[0]-1), random.randint(0, dims[1]-1), random.randint(0, dims[2]-1))
+    pos = (random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1), random.randint(0, dims[2] - 1))
     b.start_element(Write_raw_data_time)
     data.save_raw(dummy_data, pos)
     b.done_element()
