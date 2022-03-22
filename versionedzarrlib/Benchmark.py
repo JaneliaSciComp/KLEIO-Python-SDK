@@ -11,8 +11,8 @@ GC_time = 6
 
 Remaining_space = 10
 Logic_Size = 11
-# DU_Size = 12
-Used_Size_df = 12
+DU_Size = 12
+Used_Size_df = 13
 
 TIME_ELEMENTS = [
     "Reading_time",
@@ -27,7 +27,7 @@ TIME_ELEMENTS = [
 SIZE_ELEMENTS = [
     "Remaining_space",
     "Logic_Size",
-    # "DU_Size",
+    "DU_Size",
     "Used_Size_df"
 ]
 

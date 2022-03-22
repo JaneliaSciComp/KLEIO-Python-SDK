@@ -193,12 +193,7 @@ class VersionedData(NestedDirectoryStore):
         return used, available
 
     def du_size(self):
-        all_lines = subprocess.check_output(["du", "-c", self.path]).decode("utf-8").split("\n")
-        result = all_lines[len(all_lines) - 2]
-        if result.__contains__("total"):
-            return result.split()[0]
-        print("Error du !")
-        return 0
+        return subprocess.check_output(["du", "-s", self.path]).decode("utf-8").split()[0]
 
     def get_size(self):
         root_directory = Path(self.path)
