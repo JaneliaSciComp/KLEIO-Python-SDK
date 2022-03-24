@@ -2,7 +2,7 @@ import random
 import sys
 from tqdm import tqdm
 import numpy as np
-from .config import *
+from config import *
 sys.path.append('../../')
 
 from versionedzarrlib import *
@@ -27,6 +27,7 @@ time_benchmark.write_line(TimeBenchmark.get_header())
 next_gc = random.randint(50, 500)
 i_gc = 0
 i_checkout = 0
+
 
 
 def add_size_bench(size_benchmark):
@@ -71,9 +72,10 @@ for i in tqdm(range(iterations)):
     b.start_element(Writing_index_time)
     data.update_index(index, pos)
     b.done_element()
-    b.start_element(Commit_time)
-    data.commit("Add {} at {}".format(index, pos))
-    b.done_element()
+    if i_checkout % 10 == 0 :
+        b.start_element(Commit_time)
+        data.commit("Add {} at {}".format(index, pos))
+        b.done_element()
 
     time_benchmark.write_line(b.format())
     add_size_bench(size_benchmark)
