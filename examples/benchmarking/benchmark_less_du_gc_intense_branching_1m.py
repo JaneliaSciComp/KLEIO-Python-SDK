@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 from tqdm import tqdm
-
+from path_config import *
 from config import *
 from utils import *
 
