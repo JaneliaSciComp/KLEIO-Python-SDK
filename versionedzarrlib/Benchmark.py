@@ -1,24 +1,17 @@
 import os
 import time
 
-Reading_time = 0
-Writing_index_time = 1
-Get_new_index_time = 2
-Write_raw_data_time = 3
-Commit_time = 4
-Checkout_time = 5
-GC_time = 6
+Writing_index_time = 0
+Commit_time = 1
+Checkout_time = 2
+GC_time = 3
 
 Remaining_space = 10
-Logic_Size = 11
-DU_Size = 12
-Used_Size_df = 13
+DU_Size = 11
+Used_Size_df = 12
 
 TIME_ELEMENTS = [
-    "Reading_time",
     "Writing_index_time",
-    "Get_new_index_time",
-    "Write_raw_data_time",
     "Commit_time",
     "Checkout_time",
     "GC_time"
@@ -26,7 +19,6 @@ TIME_ELEMENTS = [
 
 SIZE_ELEMENTS = [
     "Remaining_space",
-    "Logic_Size",
     "DU_Size",
     "Used_Size_df"
 ]
@@ -106,6 +98,4 @@ class Benchmarking(object):
             raise Exception("File exists already: " + path)
 
     def write_line(self, line):
-        logger = open(self.path, "a")
-        logger.write(line + "\n")
-        logger.close()
+        open(self.path, "a").write(line + "\n")
