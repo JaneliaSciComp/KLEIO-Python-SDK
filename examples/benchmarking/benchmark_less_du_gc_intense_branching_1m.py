@@ -14,7 +14,7 @@ from versionedzarrlib import *
 
 dummy_data = np.zeros(raw_chunk_size, dtype='i8')
 
-
+incremental_du_step = du_step
 def add_size_bench(size_benchmarks, with_du=False):
     size_b = SizeBenchmark()
     used, available = data.get_df_used_remaining()
@@ -83,7 +83,8 @@ for commit_step in commit_steps:
                     time_benchmark.write_line(b.format())
                     if df_step == i_df:
                         i_df = 0
-                        if du_step == i_du:
+                        if incremental_du_step == i_du:
+                            incremental_du_step = incremental_du_step * 2
                             i_du = 0
                             add_size_bench(size_benchmark, with_du=True)
                         else:
