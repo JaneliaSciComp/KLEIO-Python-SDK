@@ -1,6 +1,6 @@
 dims = (1000, 1000, 1000)
 raw_chunk_size = (1, 1, 1)
-index_chunk_sizes = [(1, 1, 1)]
+index_chunk_sizes = [(100, 100, 100), (10, 10, 10), (1, 1, 1)]
 iterations = 1000000
 compress_indexes = [False, True]
 gc_step = 500
