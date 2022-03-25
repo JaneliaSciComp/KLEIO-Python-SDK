@@ -39,6 +39,7 @@ for commit_step in commit_steps:
                                  index_chunk_size=index_chunk_size,
                                  index_compression=compress_index)
             data.create(overwrite=True)
+            empty_trash()
 
             size_benchmark = Benchmarking(
                 Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra=extra))
