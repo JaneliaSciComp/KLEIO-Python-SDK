@@ -3,8 +3,9 @@ import sys
 
 import numpy as np
 from tqdm import tqdm
-from path_config import *
+
 from config import *
+from path_config import *
 from utils import *
 
 sys.path.append('../../')
@@ -25,9 +26,10 @@ def add_size_bench(size_benchmarks, with_du=False):
     size_benchmarks.write_line(size_b.format())
 
 
-for index_chunk_size in index_chunk_sizes:
+for commit_step in commit_steps:
     for compress_index in compress_indexes:
-        for commit_step in commit_steps:
+        for index_chunk_size in index_chunk_sizes:
+
             extra = "iter_{}_shape_{}_index_{}_commit_{}_compression_{}".format(iterations, format_tuple(dims),
                                                                                 format_tuple(index_chunk_size),
                                                                                 commit_step,
