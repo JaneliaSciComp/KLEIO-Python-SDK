@@ -25,7 +25,7 @@ class VersionedData(NestedDirectoryStore):
                  normalize_keys=False,
                  key_separator=None,
                  mode='w',
-                 index_compression = True,
+                 index_compression=True,
                  dimension_separator="/"):
 
         self.normalize_keys = normalize_keys
@@ -65,17 +65,17 @@ class VersionedData(NestedDirectoryStore):
 
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.dtype)
         self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
-                            chunk_size=self.index_chunk_size,compression = self.index_compression)
+                            chunk_size=self.index_chunk_size, compression=self.index_compression)
         metadata.create_like(path=self.path, like=os.path.join(self.path, index_dataset_name))
         print("Dataset created!")
 
-    def create_dataset(self, path, shape, chunk_size, compression : bool):
+    def create_dataset(self, path, shape, chunk_size, compression: bool):
         if compression:
             zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
-                  dtype=np.uint64)
+                      dtype=np.uint64)
         else:
             zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
-                      dtype=np.uint64,compression=None)
+                      dtype=np.uint64, compression=None)
         self.git.init()
 
     def get_ids(self):
@@ -199,6 +199,12 @@ class VersionedData(NestedDirectoryStore):
         root_directory = Path(self.path)
         # command du
         return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
+
+    def fill_random(self):
+        randoms = np.random.randint(1, 100000000, self.index_matrix_dimension, dtype='int64')
+        print("got randoms {}".format(randoms.shape))
+        Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
+        Z[:] = randoms
 
 
 def is_chunk_key(key):
