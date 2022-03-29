@@ -59,10 +59,16 @@ for commit_step in commit_steps:
                 b.done_element()
                 print("file filled ")
 
+                b.start_element(Init_time)
+                data.git.init()
+                b.done_element()
+
+
                 b.start_element(Commit_time)
                 data.commit("Initial commit")
                 b.done_element()
                 add_size_bench(size_benchmark, with_du=False)
+                time_benchmark.write_line(b.format())
 
                 i_gc = 0
                 i_commit = 0

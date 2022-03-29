@@ -84,7 +84,7 @@ class VersionedData(NestedDirectoryStore):
             da.store(data, dest)
             print("Done random fill.")
 
-        self.git.init()
+        # self.git.init()
 
     def get_ids(self):
         A = zarr.open(self.dataset_file, mode='r')
