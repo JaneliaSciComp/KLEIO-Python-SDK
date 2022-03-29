@@ -3,9 +3,9 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import dask.array as da
 import numpy as np
 import zarr
-from tqdm import tqdm
 from zarr.storage import NestedDirectoryStore
 
 from .GitLib import GitInstance
@@ -49,7 +49,7 @@ class VersionedData(NestedDirectoryStore):
         print('Grid dimensions: {}'.format(self.index_matrix_dimension))
         self.git = GitInstance(os.path.join(path, index_dataset_name))
 
-    def create(self, overwrite=False):
+    def create(self, random_fill=False, overwrite=False):
         print("Start file creation ..")
         if os.path.exists(self.path):
             print("File already exists ! ")
@@ -66,17 +66,24 @@ class VersionedData(NestedDirectoryStore):
 
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.dtype)
         self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
-                            chunk_size=self.index_chunk_size, compression=self.index_compression)
+                            chunk_size=self.index_chunk_size, compression=self.index_compression,
+                            ramdom_fill=random_fill)
         metadata.create_like(path=self.path, like=os.path.join(self.path, index_dataset_name))
         print("Dataset created!")
 
-    def create_dataset(self, path, shape, chunk_size, compression: bool):
+    def create_dataset(self, path, shape, chunk_size, compression: bool, ramdom_fill: bool):
         if compression:
-            zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
-                      dtype=np.uint64)
+            dest = zarr.open(zarr.NestedDirectoryStore(path), shape=shape, chunks=chunk_size, mode='w-',
+                             dtype=np.uint64)
         else:
-            zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
-                      dtype=np.uint64, compression=None)
+            dest = zarr.open(zarr.NestedDirectoryStore(path), shape=shape, chunks=chunk_size, mode='w-',
+                             dtype=np.uint64, compression=None)
+
+        if ramdom_fill:
+            data = da.random.randint(size=shape, chunks=tuple(chunk_size), low=1, high=10000000, dtype=np.uint64)
+            da.store(data, dest)
+            print("Done random fill.")
+
         self.git.init()
 
     def get_ids(self):
@@ -201,29 +208,28 @@ class VersionedData(NestedDirectoryStore):
         # command du
         return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
-    def fill_random(self):
-
-        # randoms = np.random.randint(1, 100000000, self.index_matrix_dimension, dtype='int64')
-        # print("got randoms {}".format(randoms.shape))
-        index_chunks = self.get_grid_dimensions(self.index_matrix_dimension, self.index_chunk_size)
-        for i in tqdm(range(index_chunks[0])):
-            for j in range(index_chunks[1]):
-                for k in range(index_chunks[2]):
-                    try:
-
-                        Z =  zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
-                        Z[i*self.index_chunk_size[0]:i*self.index_chunk_size[0]+self.index_chunk_size[0],
-                        j*self.index_chunk_size[1]:j*self.index_chunk_size[1]+self.index_chunk_size[1],
-                        k*self.index_chunk_size[2]:k*self.index_chunk_size[2]+self.index_chunk_size[2]] = np.random.randint(1, 100000000, self.index_chunk_size, dtype='int64')
-                    except Exception as err:
-                        print(err)
-
-
-
-
-        # with zarr.open(os.path.join(self.path, index_dataset_name), mode='a') as Z:
-        #     for i in tqdm(range(self.index_matrix_dimension(2))):
-        #         Z[:, :, i] = randoms[:, :, i]
+    # def fill_random(self):
+    #
+    #     # randoms = np.random.randint(1, 100000000, self.index_matrix_dimension, dtype='int64')
+    #     # print("got randoms {}".format(randoms.shape))
+    #
+    #     index_chunks = self.get_grid_dimensions(self.index_matrix_dimension, self.index_chunk_size)
+    #     for i in tqdm(range(index_chunks[0])):
+    #         for j in range(index_chunks[1]):
+    #             for k in range(index_chunks[2]):
+    #                 try:
+    #
+    #                     Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
+    #                     Z[i * self.index_chunk_size[0]:i * self.index_chunk_size[0] + self.index_chunk_size[0],
+    #                     j * self.index_chunk_size[1]:j * self.index_chunk_size[1] + self.index_chunk_size[1],
+    #                     k * self.index_chunk_size[2]:k * self.index_chunk_size[2] + self.index_chunk_size[
+    #                         2]] = np.random.randint(1, 100000000, self.index_chunk_size, dtype='int64')
+    #                 except Exception as err:
+    #                     print(err)
+    #
+    #     # with zarr.open(os.path.join(self.path, index_dataset_name), mode='a') as Z:
+    #     #     for i in tqdm(range(self.index_matrix_dimension(2))):
+    #     #         Z[:, :, i] = randoms[:, :, i]
 
 
 def is_chunk_key(key):
