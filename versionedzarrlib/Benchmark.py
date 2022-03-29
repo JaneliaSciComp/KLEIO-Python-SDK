@@ -5,7 +5,6 @@ Writing_index_time = 0
 Commit_time = 1
 Checkout_time = 2
 GC_time = 3
-Init_time = 4
 
 Remaining_space = 10
 DU_Size = 11
@@ -15,8 +14,7 @@ TIME_ELEMENTS = [
     "Writing_index_time",
     "Commit_time",
     "Checkout_time",
-    "GC_time",
-    "Init_time"
+    "GC_time"
 ]
 
 SIZE_ELEMENTS = [
