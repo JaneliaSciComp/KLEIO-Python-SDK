@@ -5,5 +5,5 @@ iterations = 5000
 compress_indexes = [True, False]
 gc_step = 400
 commit_steps = [50]
-du_step = 5000
+du_step = 800
 df_step = 50
