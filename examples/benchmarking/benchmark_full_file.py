@@ -43,7 +43,7 @@ for commit_step in commit_steps:
             data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
                                  index_chunk_size=index_chunk_size,
                                  index_compression=compress_index)
-            data.create(overwrite=True,random_fill=True)
+
             # empty_trash()
             size_benchmark = Benchmarking(
                 Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_size, extra=extra))
@@ -51,12 +51,14 @@ for commit_step in commit_steps:
             time_benchmark = Benchmarking(
                 Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra=extra))
             time_benchmark.write_line(TimeBenchmark.get_header())
-
+            b = TimeBenchmark()
             # Fill file:
             print("start fill")
-            data.fill_random()
+            b.start_element(Writing_index_time)
+            data.create(overwrite=True,random_fill=True)
+            b.done_element()
             print("file filled ")
-            b = TimeBenchmark()
+
             b.start_element(Commit_time)
             data.commit("Initial commit")
             b.done_element()
