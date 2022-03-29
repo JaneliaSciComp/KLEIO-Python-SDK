@@ -203,8 +203,8 @@ class VersionedData(NestedDirectoryStore):
 
     def fill_random(self):
 
-        randoms = np.random.randint(1, 100000000, self.index_matrix_dimension, dtype='int64')
-        print("got randoms {}".format(randoms.shape))
+        # randoms = np.random.randint(1, 100000000, self.index_matrix_dimension, dtype='int64')
+        # print("got randoms {}".format(randoms.shape))
         index_chunks = self.get_grid_dimensions(self.index_matrix_dimension, self.index_chunk_size)
         for i in tqdm(range(index_chunks[0])):
             for j in range(index_chunks[1]):
@@ -214,9 +214,7 @@ class VersionedData(NestedDirectoryStore):
                         Z =  zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
                         Z[i*self.index_chunk_size[0]:i*self.index_chunk_size[0]+self.index_chunk_size[0],
                         j*self.index_chunk_size[1]:j*self.index_chunk_size[1]+self.index_chunk_size[1],
-                        k*self.index_chunk_size[2]:k*self.index_chunk_size[2]+self.index_chunk_size[2]] = randoms[i*self.index_chunk_size[0]:i*self.index_chunk_size[0]+self.index_chunk_size[0],
-                                                                                                          j*self.index_chunk_size[1]:j*self.index_chunk_size[1]+self.index_chunk_size[1],
-                                                                                                          k*self.index_chunk_size[2]:k*self.index_chunk_size[2]+self.index_chunk_size[2]]
+                        k*self.index_chunk_size[2]:k*self.index_chunk_size[2]+self.index_chunk_size[2]] = np.random.randint(1, 100000000, self.index_chunk_size, dtype='int64')
                     except Exception as err:
                         print(err)
 
