@@ -62,7 +62,7 @@ for commit_step in commit_steps:
                 b.start_element(Commit_time)
                 data.commit("Initial commit")
                 b.done_element()
-                add_size_bench(size_benchmark, with_du=True)
+                add_size_bench(size_benchmark, with_du=False)
 
                 i_gc = 0
                 i_commit = 0
