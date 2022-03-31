@@ -38,7 +38,7 @@ class TimeBenchmark:
         elements = [""] * len(TIME_ELEMENTS)
         for k in self.elms.keys():
             elements[k] = str(self.elms[k])
-        return self.index+";"+";".join(elements)
+        return str(self.index)+";"+";".join(elements)
 
     def add_element(self, n: int):
         self.elms[n] = time.time()
@@ -65,7 +65,7 @@ class SizeBenchmark:
         elements = [""] * len(SIZE_ELEMENTS)
         for k in self.elms.keys():
             elements[k - 10] = str(self.elms[k])
-        return self.index+";"+";".join(elements)
+        return str(self.index)+";"+";".join(elements)
 
     def add(self, elm_type, val):
         self.elms[elm_type] = val
