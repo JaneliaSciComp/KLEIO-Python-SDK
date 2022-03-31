@@ -65,7 +65,7 @@ for commit_step in commit_steps:
                 b.done_element()
                 print("Git init")
 
-                add_size_bench(size_benchmark, with_du=False)
+                add_size_bench(0,size_benchmark, with_du=False)
                 time_benchmark.write_line(b.format())
 
                 i_gc = 0
@@ -88,7 +88,7 @@ for commit_step in commit_steps:
                         b.start_element(GC_time)
                         data.git.gc()
                         b.done_element()
-                        add_size_bench(size_benchmark)
+                        add_size_bench(i,size_benchmark)
 
                     # Writing
                     index = data.get_next_index()
@@ -107,8 +107,8 @@ for commit_step in commit_steps:
                         if incremental_du_step == i_du:
                             incremental_du_step = incremental_du_step * 2
                             i_du = 0
-                            add_size_bench(size_benchmark, with_du=True)
+                            add_size_bench(i,size_benchmark, with_du=True)
                         else:
-                            add_size_bench(size_benchmark, with_du=False)
+                            add_size_bench(i,size_benchmark, with_du=False)
             except Exception as err:
                 print(err)
