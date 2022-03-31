@@ -17,8 +17,8 @@ dummy_data = np.zeros(raw_chunk_size, dtype='i8')
 incremental_du_step = du_step
 
 
-def add_size_bench(size_benchmarks, with_du=False):
-    size_b = SizeBenchmark()
+def add_size_bench(pos, size_benchmarks, with_du=False):
+    size_b = SizeBenchmark(pos)
     used, available = data.get_df_used_remaining()
     size_b.add(Remaining_space, available)
     size_b.add(Used_Size_df, used)
@@ -32,6 +32,7 @@ for commit_step in commit_steps:
     for compress_index in compress_indexes:
         for index_chunk_size in index_chunk_sizes:
             try:
+
                 extra = "random_full_first_iter_{}_shape_{}_index_{}_commit_{}_compression_{}".format(iterations,
                                                                                                       format_tuple(
                                                                                                           dims),
@@ -51,11 +52,11 @@ for commit_step in commit_steps:
                 time_benchmark = Benchmarking(
                     Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra=extra))
                 time_benchmark.write_line(TimeBenchmark.get_header())
-                b = TimeBenchmark()
+                b = TimeBenchmark(0)
                 # Fill file:
                 print("start fill")
                 b.start_element(Writing_index_time)
-                data.create(overwrite=True,random_fill=True)
+                data.create(overwrite=True, random_fill=True)
                 b.done_element()
                 print("file filled ")
 
@@ -74,13 +75,13 @@ for commit_step in commit_steps:
 
                 for i in tqdm(range(iterations)):
                     pos = (
-                    random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1), random.randint(0, dims[2] - 1))
+                        random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1), random.randint(0, dims[2] - 1))
                     i_gc = i_gc + 1
                     i_commit = i_commit + 1
                     i_df = i_df + 1
                     i_du = i_du + 1
 
-                    b = TimeBenchmark()
+                    b = TimeBenchmark(i)
 
                     if i_gc == gc_step:
                         i_gc = 0
