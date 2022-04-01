@@ -69,12 +69,15 @@ def main():
                         time_benchmark = Benchmarking(
                             Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra=extra))
                         time_benchmark.write_line(TimeBenchmark.get_header())
-                        # add_size_bench("initial", data, size_benchmark, with_du=False)
                         b = TimeBenchmark(0)
                         # Fill file:
+
+                        data.creae(overwrite=True)
+
+                        add_size_bench("initial", data, size_benchmark, with_du=False)
                         print("start fill")
                         b.start_element(Random_fill)
-                        data.create(overwrite=True, data=dask_data)
+                        data.create_new_dataset(data=dask_data)
                         b.done_element()
                         print("file filled ")
                         add_size_bench("created", data, size_benchmark)

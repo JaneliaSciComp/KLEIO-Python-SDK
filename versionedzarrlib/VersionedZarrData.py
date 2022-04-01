@@ -49,7 +49,7 @@ class VersionedData(NestedDirectoryStore):
         print('Grid dimensions: {}'.format(self.index_matrix_dimension))
         self.git = GitInstance(os.path.join(path, index_dataset_name))
 
-    def create(self, data=None, overwrite=False):
+    def create(self, overwrite=False):
         print("Start file creation ..")
         if os.path.exists(self.path):
             print("File already exists ! ")
@@ -64,6 +64,7 @@ class VersionedData(NestedDirectoryStore):
         os.mkdir(self.path)
         os.mkdir(os.path.join(self.path, raw_folder))
 
+    def create_new_dataset(self, data=None):
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.dtype)
         self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
                             chunk_size=self.index_chunk_size, compression=self.index_compression,
