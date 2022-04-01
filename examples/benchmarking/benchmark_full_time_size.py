@@ -72,7 +72,7 @@ def main():
                         b = TimeBenchmark(0)
                         # Fill file:
 
-                        data.creae(overwrite=True)
+                        data.create(overwrite=True)
 
                         add_size_bench("initial", data, size_benchmark, with_du=False)
                         print("start fill")
