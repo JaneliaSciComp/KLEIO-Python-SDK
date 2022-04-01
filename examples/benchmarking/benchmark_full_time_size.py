@@ -11,7 +11,7 @@ import numpy as np
 import dask.array as da
 from dask.distributed import Client
 from tqdm import tqdm
-from random import random
+import random
 
 
 def add_size_bench(pos, data, size_benchmarks, with_du=True):
@@ -69,7 +69,7 @@ def main():
                         time_benchmark = Benchmarking(
                             Benchmarking.create_path(current_folder=benchmark_path, elm_type=Type_Time, extra=extra))
                         time_benchmark.write_line(TimeBenchmark.get_header())
-                        add_size_bench("initial", data, size_benchmark, with_du=False)
+                        # add_size_bench("initial", data, size_benchmark, with_du=False)
                         b = TimeBenchmark(0)
                         # Fill file:
                         print("start fill")
@@ -109,12 +109,11 @@ def main():
                             if i_gc == gc_step:
                                 i_df = 0
                                 i_gc = 0
-                                add_size_bench(i - 1, size_benchmark)
+                                add_size_bench(i - 1, data, size_benchmark)
                                 b.start_element(GC_time)
                                 data.git.gc()
                                 b.done_element()
-                                add_size_bench(i, size_benchmark)
-                                add_size_bench(i, size_benchmark)
+                                add_size_bench(i, data, size_benchmark)
 
                             # Writing
                             index = data.get_next_index()
@@ -123,17 +122,17 @@ def main():
                             b.done_element()
                             if i_commit == commit_step:
                                 i_df = 0
-                                add_size_bench(i - 1, size_benchmark)
+                                add_size_bench(i - 1, data, size_benchmark)
                                 i_commit = 0
                                 b.start_element(Commit_time)
                                 data.commit("Add {} at {}".format(index, pos))
                                 b.done_element()
-                                add_size_bench(i, size_benchmark)
+                                add_size_bench(i, data, size_benchmark)
 
                             time_benchmark.write_line(b.format())
                             if df_step == i_df:
                                 i_df = 0
-                                add_size_bench(i, size_benchmark)
+                                add_size_bench(i, data, size_benchmark)
 
 
 if __name__ == "__main__":
