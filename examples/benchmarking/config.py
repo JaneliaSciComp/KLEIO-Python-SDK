@@ -1,9 +1,9 @@
-dimensions = [(500, 500, 500),(1000, 1000, 1000)]
+dimensions = [(200, 200, 200), (500, 500, 500), (1000, 1000, 1000)]
 raw_chunk_size = (1, 1, 1)
-index_chunk_sizes = [(100, 100, 100), (10, 10, 10), (16, 16, 16), (50, 50, 50), (60, 60, 60), (32, 32, 32)]
+index_chunk_sizes = [(100, 100, 100), (50, 50, 50), (64, 64, 64), (32, 32, 32), (16, 16, 16), (10, 10, 10)]
 iterations = 5000
 compress_indexes = [True, False]
-gc_step = 400
-commit_steps = [50, 1, 10, 20, 30, 40]
+gc_steps = [400,1000]
+commit_steps = [50, 1, 10,  30, 100]
 du_step = 800
 df_step = 50
