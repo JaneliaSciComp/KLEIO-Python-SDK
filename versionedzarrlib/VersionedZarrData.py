@@ -3,6 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import dask.array as da
 import numpy as np
 import zarr
 from zarr.storage import NestedDirectoryStore
@@ -10,7 +11,7 @@ from zarr.storage import NestedDirectoryStore
 from .GitLib import GitInstance
 from .Metadata import Metadata
 from .util import fromfile, tofile
-import dask.array as da
+
 index_dataset_name = "dataset.zarr"
 raw_folder = "raw/"
 
@@ -48,7 +49,7 @@ class VersionedData(NestedDirectoryStore):
         print('Grid dimensions: {}'.format(self.index_matrix_dimension))
         self.git = GitInstance(os.path.join(path, index_dataset_name))
 
-    def create(self, random_fill=False, overwrite=False):
+    def create(self, data=None, overwrite=False):
         print("Start file creation ..")
         if os.path.exists(self.path):
             print("File already exists ! ")
@@ -66,11 +67,11 @@ class VersionedData(NestedDirectoryStore):
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.dtype)
         self.create_dataset(path=os.path.join(self.path, index_dataset_name), shape=self.index_matrix_dimension,
                             chunk_size=self.index_chunk_size, compression=self.index_compression,
-                            ramdom_fill=random_fill)
+                            data=data)
         metadata.create_like(path=self.path, like=os.path.join(self.path, index_dataset_name))
         print("Dataset created!")
 
-    def create_dataset(self, path, shape, chunk_size, compression: bool, ramdom_fill: bool):
+    def create_dataset(self, path, shape, chunk_size, compression: bool, data=None):
         if compression:
             dest = zarr.open(zarr.NestedDirectoryStore(path), shape=shape, chunks=chunk_size, mode='w-',
                              dtype=np.uint64)
@@ -78,22 +79,12 @@ class VersionedData(NestedDirectoryStore):
             dest = zarr.open(zarr.NestedDirectoryStore(path), shape=shape, chunks=chunk_size, mode='w-',
                              dtype=np.uint64, compression=None)
 
-        if ramdom_fill:
-            total = 1
-            for i in shape:
-                total = total * i
-            print("Total: {}".format(total))
-            elms = np.arange(total, dtype=np.uint64).reshape(shape)
-            print("Got elements! ")
-            np.random.shuffle(elms)
-            print("Elements shuffled !")
-            da
-            dest[:] = elms[:]
-            # data = da.random.randint(size=shape, chunks=tuple(chunk_size), low=1, high=10000000, dtype=np.uint64)
-            # da.store(data, dest)
-            print("Done random fill.")
+        if data is not None:
+            print("Start fill")
+            da.store(data, dest)
+            print("Done random fill")
 
-        self.git.init()
+        # self.git.init()
 
     def get_ids(self):
         A = zarr.open(self.dataset_file, mode='r')
