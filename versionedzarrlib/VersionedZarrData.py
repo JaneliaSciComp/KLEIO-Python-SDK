@@ -3,7 +3,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import dask.array as da
 import numpy as np
 import zarr
 from zarr.storage import NestedDirectoryStore
@@ -11,7 +10,7 @@ from zarr.storage import NestedDirectoryStore
 from .GitLib import GitInstance
 from .Metadata import Metadata
 from .util import fromfile, tofile
-
+import dask.array as da
 index_dataset_name = "dataset.zarr"
 raw_folder = "raw/"
 
@@ -80,8 +79,18 @@ class VersionedData(NestedDirectoryStore):
                              dtype=np.uint64, compression=None)
 
         if ramdom_fill:
-            data = da.random.randint(size=shape, chunks=tuple(chunk_size), low=1, high=10000000, dtype=np.uint64)
-            da.store(data, dest)
+            total = 1
+            for i in shape:
+                total = total * i
+            print("Total: {}".format(total))
+            elms = np.arange(total, dtype=np.uint64).reshape(shape)
+            print("Got elements! ")
+            np.random.shuffle(elms)
+            print("Elements shuffled !")
+            da
+            dest[:] = elms[:]
+            # data = da.random.randint(size=shape, chunks=tuple(chunk_size), low=1, high=10000000, dtype=np.uint64)
+            # da.store(data, dest)
             print("Done random fill.")
 
         self.git.init()

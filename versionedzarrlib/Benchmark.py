@@ -28,7 +28,7 @@ Type_size = 1
 
 
 class TimeBenchmark:
-    def __init__(self,index) -> None:
+    def __init__(self, index) -> None:
         self.index = index
         self.elms = {}
         self.current = None
@@ -38,7 +38,7 @@ class TimeBenchmark:
         elements = [""] * len(TIME_ELEMENTS)
         for k in self.elms.keys():
             elements[k] = str(self.elms[k])
-        return str(self.index)+";"+";".join(elements)
+        return str(self.index) + ";" + ";".join(elements)
 
     def add_element(self, n: int):
         self.elms[n] = time.time()
@@ -53,11 +53,11 @@ class TimeBenchmark:
 
     @classmethod
     def get_header(cls):
-        return "index;"+";".join(TIME_ELEMENTS)
+        return "index;" + ";".join(TIME_ELEMENTS)
 
 
 class SizeBenchmark:
-    def __init__(self,index) -> None:
+    def __init__(self, index) -> None:
         self.index = index
         self.elms = {}
 
@@ -65,14 +65,14 @@ class SizeBenchmark:
         elements = [""] * len(SIZE_ELEMENTS)
         for k in self.elms.keys():
             elements[k - 10] = str(self.elms[k])
-        return str(self.index)+";"+";".join(elements)
+        return str(self.index) + ";" + ";".join(elements)
 
     def add(self, elm_type, val):
         self.elms[elm_type] = val
 
     @classmethod
     def get_header(cls):
-        return "index;"+";".join(SIZE_ELEMENTS)
+        return "index;" + ";".join(SIZE_ELEMENTS)
 
 
 class Benchmarking(object):
