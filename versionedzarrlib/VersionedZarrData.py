@@ -73,11 +73,12 @@ class VersionedData(NestedDirectoryStore):
         print("Dataset created!")
 
     def create_dataset(self, path, shape, chunk_size, compression: bool, data=None):
+        # zarr.NestedDirectoryStore(path)
         if compression:
-            dest = zarr.open(zarr.NestedDirectoryStore(path), shape=shape, chunks=chunk_size, mode='w-',
+            dest = zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
                              dtype=np.uint64)
         else:
-            dest = zarr.open(zarr.NestedDirectoryStore(path), shape=shape, chunks=chunk_size, mode='w-',
+            dest = zarr.open(path, shape=shape, chunks=chunk_size, mode='w-',
                              dtype=np.uint64, compression=None)
 
         if data is not None:
@@ -110,12 +111,13 @@ class VersionedData(NestedDirectoryStore):
         A = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
         A[:] = data
 
-    def update_index(self, index, position):
-        Z = zarr.open(os.path.join(self.path, index_dataset_name), mode='a')
+    def update_index(self, index, position, index_dataset=index_dataset_name):
+        Z = zarr.open(os.path.join(self.path, index_dataset), mode='a')
         # print("Writing {}".format(position))
         Z[position] = index
 
     def commit(self, message):
+        self.git.add()
         self.git.commit(message)
 
     def write_block(self, data, grid_position):
@@ -177,6 +179,11 @@ class VersionedData(NestedDirectoryStore):
         else:
             super().__setitem__(key, value)
 
+    def commit(self, message, dataset=index_dataset_name):
+        git_instance = GitInstance(os.path.join(self.path, dataset))
+        git_instance.add()
+        git_instance.commit(message)
+
     @staticmethod
     def get_grid_dimensions(dimension, chunk_size):
         result = []
@@ -204,11 +211,17 @@ class VersionedData(NestedDirectoryStore):
     def du_size(self):
         return subprocess.check_output(["du", "-s", self.path]).decode("utf-8").split()[0]
 
+    def git_size(self):
+        path = os.path.join(os.path.join(self.path, index_dataset_name), ".git")
+        return subprocess.check_output(["du", "-s", path]).decode("utf-8").split()[0]
+
     def get_size(self):
         root_directory = Path(self.path)
         # command du
         return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
+    def gc(self, index_dataset=index_dataset_name):
+        GitInstance(os.path.join(self.path, index_dataset)).gc()
     # def fill_random(self):
     #
     #     # randoms = np.random.randint(1, 100000000, self.index_matrix_dimension, dtype='int64')

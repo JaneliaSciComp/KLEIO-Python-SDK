@@ -2,18 +2,29 @@ import time
 
 from git import Repo
 
+gitattributes = ".gitattributes"
+
 
 class GitInstance(object):
 
     def __init__(self, root_path: str):
         self.root_path = root_path
 
+    def create_attributes(self):
+        with open(self.root_path, "w") as A:
+            A.write("* binary\n")
+            A.write("*.* binary\n")
+
     def init(self):
-        self.commit('Initial commit')
+        Repo.init(self.root_path)
+        # self.commit('Initial commit')
+
+    def add(self):
+        repo = Repo(self.root_path)
+        repo.git.add(all=True)
 
     def commit(self, commit_name: str):
-        repo = Repo.init(self.root_path)
-        repo.git.add(all=True)
+        repo = Repo(self.root_path)
         repo.index.commit(commit_name)
 
     def show_history(self):
