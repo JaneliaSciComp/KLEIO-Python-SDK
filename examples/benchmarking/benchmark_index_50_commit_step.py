@@ -13,25 +13,20 @@ from tqdm import tqdm
 import random
 
 raw_chunk_size = (1, 1, 1)
-commits_once = [1, 5, 10, 20, 30, 40, 60, 120]
-dims = (1000,1000,1000)
-index_chunk_size = (50, 50, 50)
-iterations = 120
-compress_index = True
-
-
-def add_size_benchs(pos, data, size_benchmarks, with_du=True):
-    size_b = SizeBenchmark(pos)
-    used, available = data.get_df_used_remaining()
-    size_b.add(Remaining_space, available)
-    size_b.add(Used_Size_df, used)
-    if with_du:
-        du_size = data.du_size()
-        size_b.add(DU_Size, du_size)
-    size_benchmarks.write_line(size_b.format())
 
 
 def main():
+    commits_once = [1, 5, 10, 20, 30, 40, 60, 120]
+    dims = (1000, 1000, 1000)
+    index_chunk_size = (50, 50, 50)
+    iterations = 120
+    compress_index = True
+    positions = []
+    for i in tqdm(range(iterations)):
+        pos = (
+            random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1),
+            random.randint(0, dims[2] - 1))
+    positions.append(pos)
     for commit_step in commits_once:
         total = 1
         for i in dims:
@@ -88,9 +83,7 @@ def main():
         i_commit = 0
 
         for i in tqdm(range(iterations)):
-            pos = (
-                random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1),
-                random.randint(0, dims[2] - 1))
+            pos = positions[i]
             i_commit = i_commit + 1
             index = data.get_next_index()
             data.update_index(index, pos)
