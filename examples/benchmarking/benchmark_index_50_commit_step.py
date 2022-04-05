@@ -75,6 +75,7 @@ def main():
         print("file filled ")
         b.start_element(Initial_commit)
         data.git.init()
+        data.commit("inital")
         b.done_element()
         initial_after_git_size = data.du_size()
         initial_git_size = data.git_size()
@@ -96,9 +97,17 @@ def main():
                 time_benchmark.write_line(b.format())
         end_git_size = data.git_size()
         end_total_size = data.du_size()
+
+        b = TimeBenchmark(i)
+        b.start_element(GC_time)
+        data.git.gc()
+        b.done_element()
+        time_benchmark.write_line(b.format())
+        end_after_gc = data.du_size()
+        git_end_after_gc = data.git_size()
         size_header = ["zero_size", "initial_size", "initial_after_git_size", "initial_git_size", "end_total_size",
-                       "end_git_size"]
-        size_elms = [zero_size, initial_size, initial_after_git_size, initial_git_size, end_total_size, end_git_size]
+                       "end_git_size","end_after_gc","git_end_after_gc"]
+        size_elms = [zero_size, initial_size, initial_after_git_size, initial_git_size, end_total_size, end_git_size,end_after_gc,git_end_after_gc]
         size_benchmark.write_line(";".join(size_header))
         size_benchmark.write_line(";".join(size_elms))
 
