@@ -14,53 +14,53 @@ from tqdm import tqdm
 import random
 
 
-def add_size_bench(pos, data, size_benchmarks, with_du=True):
-    size_b = SizeBenchmark(pos)
-    used, available = data.get_df_used_remaining()
-    size_b.add(Remaining_space, available)
-    size_b.add(Used_Size_df, used)
-    if with_du:
-        du_size = data.du_size()
-        size_b.add(DU_Size, du_size)
-    size_benchmarks.write_line(size_b.format())
+# def add_size_bench(pos, data, size_benchmarks, with_du=True):
+#     size_b = SizeBenchmark(pos)
+#     used, available = data.get_df_used_remaining()
+#     size_b.add(Remaining_space, available)
+#     size_b.add(Used_Size_df, used)
+#     if with_du:
+#         du_size = data.du_size()
+#         size_b.add(DU_Size, du_size)
+#     size_benchmarks.write_line(size_b.format())
 
 
 def main():
-    client = Client(processes=False)
-    print(client)
-    print(client.dashboard_link)
-    for commit_step in commit_steps:
-        for gc_step in gc_steps:
-            for dims in dimensions:
-                total = 1
-                for i in dims:
-                    total = total * i
+    # client = Client(processes=False)
+    # print(client)
+    # print(client.dashboard_link)
 
-                elms = np.arange(start=total, stop=total * 2, dtype=np.uint64)
-                print("Got numpy array..")
-                np.random.shuffle(elms)
-                print("Array shuffled..")
-                dask_data = da.from_array(elms)
-                print("Dask created")
-                dask_data = dask_data.reshape(dims)
-                print("Array reshaped")
-                for index_chunk_size in index_chunk_sizes:
-                    print("Start rechunk")
-                    dask_data = dask_data.rechunk(index_chunk_size)
-                    print("rechunked")
-                    for compress_index in compress_indexes:
+    for gc_step in gc_steps:
+        for dims in dimensions:
+            total = 1
+            for i in dims:
+                total = total * i
 
+            elms = np.arange(start=total, stop=total * 2, dtype=np.uint64)
+            print("Got numpy array..")
+            np.random.shuffle(elms)
+            print("Array shuffled..")
+            dask_data = da.from_array(elms)
+            print("Dask created")
+            dask_data = dask_data.reshape(dims)
+            print("Array reshaped")
+            for index_chunk_size in index_chunk_sizes:
+                print("Start rechunk")
+                dask_data = dask_data.rechunk(index_chunk_size)
+                print("rechunked")
+                for compress_index in compress_indexes:
+                    data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+                                         index_chunk_size=index_chunk_size,
+                                         index_compression=compress_index)
+                    for commit_step in commit_steps:
                         extra = "initial_all_{}_shape_{}_index_{}_commit_{}_compression_{}".format(iterations,
-                                                                                                   format_tuple(
-                                                                                                       dims),
-                                                                                                   format_tuple(
-                                                                                                       index_chunk_size),
-                                                                                                   commit_step,
-                                                                                                   compress_index)
+                                                                                               format_tuple(
+                                                                                                   dims),
+                                                                                               format_tuple(
+                                                                                                   index_chunk_size),
+                                                                                               commit_step,
+                                                                                               compress_index)
                         print('starting: {}'.format(extra))
-                        data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
-                                             index_chunk_size=index_chunk_size,
-                                             index_compression=compress_index)
 
                         # empty_trash()
                         size_benchmark = Benchmarking(
