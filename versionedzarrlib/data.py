@@ -19,17 +19,16 @@ class VersionedDataStore(NestedDirectoryStore):
     _raw_folder = "raw/"
 
     def __init__(self, path: str, shape: [int], raw_chunk_size: [int], index_chunk_size: [int] = None, d_type=np.int8,
-                 normalize_keys=False, index_compression="default", git_compressor=0, zarr_filters=None,
-                 zarr_compressor=None, index_d_type=np.uint64,
+                 normalize_keys=False, zarr_compressor="default", git_compressor=0, zarr_filters=None,
+                 index_d_type=np.uint64,
                  dimension_separator="/"):
 
         super().__init__(path, normalize_keys, dimension_separator)
         self.path = path
         self.shape = shape
-        self._index_compression = index_compression
         # For index matrix
         self._index_dataset_path = os.path.join(self.path, self._index_dataset_name)
-        self._git_compressor = git_compressor
+        self.vc_compressor = git_compressor
         self._zarr_filters = zarr_filters
         self._zarr_compressor = zarr_compressor
         self._index_d_type = index_d_type
@@ -48,7 +47,7 @@ class VersionedDataStore(NestedDirectoryStore):
 
         self._index_matrix_dimension = self._get_grid_dimensions(self.shape, self.raw_chunk_size)
         print('Grid dimensions: {}'.format(self._index_matrix_dimension))
-        self._git = VCS(self._index_dataset_path)
+        self.vc = VCS(self._index_dataset_path)
 
     def create(self, overwrite=False):
         print("Start file creation ..")
@@ -74,7 +73,7 @@ class VersionedDataStore(NestedDirectoryStore):
                   chunks=self._index_chunk_size, mode='w-',
                   dtype=self._index_d_type, compression=compressor, filters=filters)
         metadata.create_like(path=self.path, like=self._index_dataset_path)
-        self._git.init_repo()
+        self.vc.init_repo()
         print("Dataset created!")
         if data is not None:
             if data is da.Array:
@@ -88,14 +87,13 @@ class VersionedDataStore(NestedDirectoryStore):
         da.store(data, dest)
         print("Data filled.")
 
-
     def _get_ids(self):
-        A = zarr.open(self._index_dataset_path, mode='r')
-        return A[:]
+        z = zarr.open(self._index_dataset_path, mode='r')
+        return z[:]
 
     def get_chunk(self, grid_position):
-        A = zarr.open(self._index_dataset_path, mode='r')
-        file_id = A[grid_position]
+        z = zarr.open(self._index_dataset_path, mode='r')
+        file_id = z[grid_position]
         print("raw file for {} is {}".format(grid_position, file_id))
         if file_id > 0:
             return self.get_file(file_id)[:]
@@ -109,31 +107,31 @@ class VersionedDataStore(NestedDirectoryStore):
     def save_raw(self, data, index):
         new_file = os.path.join(os.path.join(self.path, self._raw_folder), "{}.zarr".format(index))
         # print("New file {}".format(new_file))
-        A = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
-        A[:] = data
+        z = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
+        z[:] = data
 
     def _update_index(self, index, position):
-        Z = zarr.open(self._index_dataset_path, mode='a')
+        z = zarr.open(self._index_dataset_path, mode='a')
         # print("Writing {}".format(position))
-        Z[position] = index
+        z[position] = index
 
     def write_block(self, data, grid_position):
         new_chunk_index: np.uint64 = self._get_next_index()
         self.save_raw(data, new_chunk_index)
 
         # np.save(new_file,data)
-        # tofile(data, new_file)
+        # to_file(data, new_file)
         self._update_index(new_chunk_index, grid_position)
-
-        self.commit("Add {} at {}".format(new_chunk_index, grid_position))
+        self.vc.add_all()
+        self.vc.commit("Add {} at {}".format(new_chunk_index, grid_position))
 
     def get_file(self, file_id: str):
         file_path = os.path.join(self._raw_folder, "{}.zarr".format(file_id))
         return zarr.open(file_path, mode='r')
 
     def block_exists(self, grid_position):
-        Z = zarr.open(self._index_dataset_path, mode='a')
-        if Z[grid_position] > 0:
+        z = zarr.open(self._index_dataset_path, mode='a')
+        if z[grid_position] > 0:
             return 1
         else:
             return 0
@@ -144,20 +142,16 @@ class VersionedDataStore(NestedDirectoryStore):
 
     # TODO test more get set items
     def __getitem__(self, key):
-        print(key)
         if self._is_chunk_key(key):
-
             # k = self._normalize_key(key, self._dimension_separator)
             k = self._normalize_chunk_key(key)
-            print(k)
-            Z = zarr.open(self._index_dataset_path)
-            position = Z[k]
+            z = zarr.open(self._index_dataset_path)
+            position = z[k]
             if position > 0:
                 file_to_open = os.path.join(os.path.join(self.path, self._raw_folder), "{}".format(position))
                 print("File to open:" + file_to_open)
                 if os.path.exists(file_to_open):
                     return fromfile(file_to_open)
-        print("super")
         return super().__getitem__(key)
 
     def __setitem__(self, key, value):
@@ -168,25 +162,13 @@ class VersionedDataStore(NestedDirectoryStore):
             tofile(value, new_file)
 
             grid_position = self._normalize_chunk_key(key)
-            Z = zarr.open(self._index_dataset_path, mode='a')
+            z = zarr.open(self._index_dataset_path, mode='a')
             print("Writing {}".format(grid_position))
-            Z[grid_position] = new_chunk_index
-            self.commit_all("Add {} at {}".format(new_chunk_index, grid_position))
+            z[grid_position] = new_chunk_index
+            self.vc.add_all()
+            self.vc.commit("Add {} at {}".format(new_chunk_index, grid_position))
         else:
             super().__setitem__(key, value)
-
-    def commit_all(self, message):
-        self._git.add_all()
-        self._git.commit(message)
-
-    def add_git_index(self, files: [str]):
-        self._git.add(files)
-
-    def add_git_index_all(self):
-        self._git.add_all()
-
-    def commit(self, message):
-        self._git.commit(message)
 
     @staticmethod
     def open_versioned_data(path: str):
@@ -214,9 +196,6 @@ class VersionedDataStore(NestedDirectoryStore):
         # command du
         return sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
 
-    def gc(self):
-        self._git.gc()
-
     @staticmethod
     def _get_grid_dimensions(dimension, chunk_size):
         result = []
@@ -232,5 +211,4 @@ class VersionedDataStore(NestedDirectoryStore):
         return str(key).__contains__('/')
 
     def _normalize_chunk_key(self, key):
-        print(key)
         return tuple([int(i) for i in str(key).split(self._dimension_separator)])
