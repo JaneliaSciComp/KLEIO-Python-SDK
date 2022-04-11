@@ -5,7 +5,7 @@ import time
 
 sys.path.append('../')
 
-from versionedzarrlib import VersionedZarrData
+from versionedzarrlib import data
 
 root_path = "/Volumes/ramdisk/versioned_data"
 

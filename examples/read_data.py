@@ -3,10 +3,10 @@ import numpy as np
 import zarr
 sys.path.append('../../')
 
-from versionedzarrlib import VersionedData
+from versionedzarrlib import VersionedDataStore
 
 path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
-data = VersionedData.open_versioned_data(path=path)
+data = VersionedDataStore.open_versioned_data(path=path)
 z = zarr.open(data)
 
 print(z.info)

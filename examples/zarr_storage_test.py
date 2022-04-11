@@ -3,7 +3,7 @@ import zarr
 
 sys.path.append('../../')
 
-from versionedzarrlib import VersionedData
+from versionedzarrlib import VersionedDataStore
 
 root_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
 
