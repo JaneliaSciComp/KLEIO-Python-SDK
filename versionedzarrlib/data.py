@@ -16,7 +16,7 @@ from .util import fromfile, tofile
 class VersionedDataStore(NestedDirectoryStore):
     DEFAULT_INDEX_CHUNK_SIZE = 64
     _index_dataset_name = "indexes"
-    _raw_folder = "raw/"
+    _raw_dir = "raw/"
 
     def __init__(self, path: str, shape: [int], raw_chunk_size: [int], index_chunk_size: [int] = None, d_type=np.int8,
                  normalize_keys=False, zarr_compressor="default", git_compressor=0, zarr_filters=None,
@@ -26,6 +26,8 @@ class VersionedDataStore(NestedDirectoryStore):
         super().__init__(path, normalize_keys, dimension_separator)
         self.path = path
         self.shape = shape
+
+        self._raw_path = os.path.join(self.path, self._raw_dir)
         # For index matrix
         self._index_dataset_path = os.path.join(self.path, self._index_dataset_name)
         self.vc_compressor = git_compressor
@@ -62,7 +64,7 @@ class VersionedDataStore(NestedDirectoryStore):
             else:
                 return
         os.mkdir(self.path)
-        os.mkdir(os.path.join(self.path, self._raw_folder))
+        os.mkdir(self._raw_path)
         self.create_new_dataset()
 
     def create_new_dataset(self, data=None):
@@ -105,7 +107,7 @@ class VersionedDataStore(NestedDirectoryStore):
         return Metadata.next_chunk(path=self.path)
 
     def save_raw(self, data, index):
-        new_file = os.path.join(os.path.join(self.path, self._raw_folder), "{}.zarr".format(index))
+        new_file = os.path.join(self._raw_path, "{}".format(index))
         # print("New file {}".format(new_file))
         z = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
         z[:] = data
@@ -122,11 +124,10 @@ class VersionedDataStore(NestedDirectoryStore):
         # np.save(new_file,data)
         # to_file(data, new_file)
         self._update_index(new_chunk_index, grid_position)
-        self.vc.add_all()
-        self.vc.commit("Add {} at {}".format(new_chunk_index, grid_position))
 
     def get_file(self, file_id: str):
-        file_path = os.path.join(self._raw_folder, "{}.zarr".format(file_id))
+        file_path = os.path.join(self._raw_path, "{}".format(file_id))
+        print(file_path)
         return zarr.open(file_path, mode='r')
 
     def block_exists(self, grid_position):
@@ -148,7 +149,7 @@ class VersionedDataStore(NestedDirectoryStore):
             z = zarr.open(self._index_dataset_path)
             position = z[k]
             if position > 0:
-                file_to_open = os.path.join(os.path.join(self.path, self._raw_folder), "{}".format(position))
+                file_to_open = os.path.join(self._raw_path, "{}".format(position))
                 print("File to open:" + file_to_open)
                 if os.path.exists(file_to_open):
                     return fromfile(file_to_open)
@@ -157,7 +158,7 @@ class VersionedDataStore(NestedDirectoryStore):
     def __setitem__(self, key, value):
         if self._is_chunk_key(key):
             new_chunk_index: np.uint64 = Metadata.next_chunk(path=self.path)
-            new_file = os.path.join(os.path.join(self.path, self._raw_folder), "{}".format(new_chunk_index))
+            new_file = os.path.join(self._raw_path, "{}".format(new_chunk_index))
             print("New file {}".format(new_file))
             tofile(value, new_file)
 
@@ -171,7 +172,7 @@ class VersionedDataStore(NestedDirectoryStore):
             super().__setitem__(key, value)
 
     @staticmethod
-    def open_versioned_data(path: str):
+    def open(path: str):
         metadata = Metadata.read_metadata(path)
         data = VersionedDataStore(path=path, shape=metadata.shape, raw_chunk_size=metadata.chunks,
                                   d_type=metadata.dtype)
