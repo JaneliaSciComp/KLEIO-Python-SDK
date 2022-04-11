@@ -2,7 +2,7 @@ import unittest
 
 from git import NoSuchPathError
 
-from versionedzarrlib.VersionControl import VCS, InvalidCompressionIndexError
+from versionedzarrlib.vc import VCS, InvalidCompressionIndexError
 
 
 class VCSTestCase(unittest.TestCase):

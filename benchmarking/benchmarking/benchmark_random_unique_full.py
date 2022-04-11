@@ -7,7 +7,7 @@ from tqdm import tqdm
 from config import *
 from path_config import *
 from utils import *
-
+from ..benchmark import *
 sys.path.append('../../')
 
 from versionedzarrlib import *
@@ -16,7 +16,7 @@ dummy_data = np.zeros(raw_chunk_size, dtype='i8')
 
 incremental_du_step = du_step
 
-
+dims = dimensions[0]
 def add_size_bench(pos, size_benchmarks, with_du=False):
     size_b = SizeBenchmark(pos)
     used, available = data.get_df_used_remaining()
@@ -41,7 +41,7 @@ for commit_step in commit_steps:
                                                                                                       commit_step,
                                                                                                       compress_index)
                 print('starting: {}'.format(extra))
-                data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+                data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
                                      index_chunk_size=index_chunk_size,
                                      index_compression=compress_index)
 
@@ -83,7 +83,7 @@ for commit_step in commit_steps:
 
                     b = TimeBenchmark(i)
 
-                    if i_gc == gc_step:
+                    if i_gc == gc_steps[0]:
                         i_gc = 0
                         b.start_element(GC_time)
                         data.git.gc()

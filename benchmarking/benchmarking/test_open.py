@@ -4,7 +4,7 @@ sys.path.append('../../')
 
 from config import *
 from path_config import *
-
+from ..benchmark import *
 from versionedzarrlib import *
 from tqdm import tqdm
 import random
@@ -12,7 +12,7 @@ import random
 datasets = ["dataset.zarr", "dataset2.zarr"]
 commit_step = 1
 dims = dimensions[0]
-data = VersionedData.open_versioned_data(data_path)
+data = VersionedDataStore.open_versioned_data(data_path)
 
 
 def add_size_bench(pos, data, size_benchmarks, with_du=True):

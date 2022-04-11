@@ -8,7 +8,7 @@ from utils import *
 from versionedzarrlib import *
 from tqdm import tqdm
 import random
-
+from ..benchmark import *
 raw_chunk_size = (1, 1, 1)
 
 
@@ -38,7 +38,7 @@ def main():
                                                                                            commit_step,
                                                                                            case)
         print('starting: {}'.format(extra))
-        data = VersionedData.open_versioned_data(file)
+        data = VersionedDataStore.open_versioned_data(file)
 
         # empty_trash()
         size_benchmark = Benchmarking(

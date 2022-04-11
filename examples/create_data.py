@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('../../')
+sys.path.append('../')
 
 from versionedzarrlib import VersionedDataStore
 import numpy as np
@@ -17,5 +17,6 @@ z = zarr.open(store=data)
 print(z.info)
 z[500, 500, 500] = 5
 z[0, 0, 0] = 10
+
 
 # dummy_data = np.ones(data.raw_chunk_size, dtype='i8')

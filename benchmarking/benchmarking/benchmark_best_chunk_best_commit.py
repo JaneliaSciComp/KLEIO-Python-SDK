@@ -5,7 +5,7 @@ sys.path.append('../../')
 # from config import *
 from path_config import *
 from utils import *
-
+from ..benchmark import *
 from versionedzarrlib import *
 import numpy as np
 import dask.array as da
@@ -43,9 +43,9 @@ def main():
 
     for index_chunk_size in index_chunk_sizes:
         pos_i = 0
-        data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
-                             index_chunk_size=index_chunk_size,
-                             index_compression=compress_index)
+        data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+                                  index_chunk_size=index_chunk_size,
+                                  index_compression=compress_index)
         data.create(overwrite=True)
         dask_data = dask_data.rechunk(index_chunk_size)
         print("Array reshaped")

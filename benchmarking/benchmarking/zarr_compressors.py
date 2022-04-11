@@ -14,6 +14,7 @@ import random
 from numcodecs import Blosc
 import zarr
 import re
+from ..benchmark import *
 
 benchmark_path = "/Users/Marwan/Desktop/activelearning/benchmarks/zarr_compress"
 data_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
@@ -71,7 +72,7 @@ def main():
     print("rechunked")
     for compressor in compressors:
         for filter in filters:
-            data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+            data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
                                  index_chunk_size=index_chunk_size,
                                  compressor=compressor, filters=filter)
             if filter == None:

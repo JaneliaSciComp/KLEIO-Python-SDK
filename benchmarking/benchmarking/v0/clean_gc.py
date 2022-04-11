@@ -3,9 +3,9 @@ import numpy as np
 import random
 import time
 
-sys.path.append('../')
+sys.path.append('../../../')
 
-from versionedzarrlib import *
+from versionedzarrlib import VersionedDataStore
 
 root_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
 
@@ -13,11 +13,11 @@ dims = (128000, 128000, 128000)
 chunk_size = (128, 128, 128)
 steps = [100, 500, 1000]
 checkout_step = 100
-modes = [   ALL_IN_ONE_CHUNK_MODE]
+modes = [ALL_IN_ONE_CHUNK_MODE]
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
 
 for mode in modes:
-    data = VersionedZarrData(root_path, dimension=dims, chunk_size=chunk_size, mode=mode)
+    data = VersionedDataStore(root_path, dimension=dims, chunk_size=chunk_size, mode=mode)
     data.create(overwrite=True)
 
     initiated_branches = [True, False, False, False, False, False, False]
@@ -62,4 +62,4 @@ for mode in modes:
         data.git.gc()
         gc_done = time.time()
         size2 = data.get_size()
-        log_gc.write("{};{};{};{};{}\n".format(step, size1, size2, gc_start, gc_done))
+        # log_gc.write("{};{};{};{};{}\n".format(step, size1, size2, gc_start, gc_done))

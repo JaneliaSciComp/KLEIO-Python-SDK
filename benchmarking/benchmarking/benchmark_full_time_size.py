@@ -5,7 +5,7 @@ sys.path.append('../../')
 from config import *
 from path_config import *
 from utils import *
-
+from ..benchmark import *
 from versionedzarrlib import *
 import numpy as np
 import dask.array as da
@@ -14,15 +14,15 @@ from tqdm import tqdm
 import random
 
 
-# def add_size_bench(pos, data, size_benchmarks, with_du=True):
-#     size_b = SizeBenchmark(pos)
-#     used, available = data.get_df_used_remaining()
-#     size_b.add(Remaining_space, available)
-#     size_b.add(Used_Size_df, used)
-#     if with_du:
-#         du_size = data.du_size()
-#         size_b.add(DU_Size, du_size)
-#     size_benchmarks.write_line(size_b.format())
+def add_size_bench(pos, data, size_benchmarks, with_du=True):
+    size_b = SizeBenchmark(pos)
+    used, available = data.get_df_used_remaining()
+    size_b.add(Remaining_space, available)
+    size_b.add(Used_Size_df, used)
+    if with_du:
+        du_size = data.du_size()
+        size_b.add(DU_Size, du_size)
+    size_benchmarks.write_line(size_b.format())
 
 
 def main():
@@ -49,17 +49,17 @@ def main():
                 dask_data = dask_data.rechunk(index_chunk_size)
                 print("rechunked")
                 for compress_index in compress_indexes:
-                    data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+                    data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
                                          index_chunk_size=index_chunk_size,
                                          index_compression=compress_index)
                     for commit_step in commit_steps:
                         extra = "initial_all_{}_shape_{}_index_{}_commit_{}_compression_{}".format(iterations,
-                                                                                               format_tuple(
-                                                                                                   dims),
-                                                                                               format_tuple(
-                                                                                                   index_chunk_size),
-                                                                                               commit_step,
-                                                                                               compress_index)
+                                                                                                   format_tuple(
+                                                                                                       dims),
+                                                                                                   format_tuple(
+                                                                                                       index_chunk_size),
+                                                                                                   commit_step,
+                                                                                                   compress_index)
                         print('starting: {}'.format(extra))
 
                         # empty_trash()

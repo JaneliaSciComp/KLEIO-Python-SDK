@@ -5,7 +5,7 @@ sys.path.append('../../')
 # from config import *
 from path_config import *
 from utils import *
-
+from ..benchmark import *
 from versionedzarrlib import *
 import numpy as np
 import dask.array as da
@@ -50,7 +50,7 @@ def main():
                                                                                    commit_step,
                                                                                    compress_index)
         print('starting: {}'.format(extra))
-        data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+        data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
                              index_chunk_size=index_chunk_size,
                              index_compression=compress_index)
 

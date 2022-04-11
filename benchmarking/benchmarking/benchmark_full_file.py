@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 from tqdm import tqdm
-
+from ..benchmark import *
 from config import *
 from path_config import *
 from utils import *
@@ -35,13 +35,13 @@ for commit_step in commit_steps:
 
                 extra = "random_full_first_iter_{}_shape_{}_index_{}_commit_{}_compression_{}".format(iterations,
                                                                                                       format_tuple(
-                                                                                                          dims),
+                                                                                                          dimensions[0]),
                                                                                                       format_tuple(
                                                                                                           index_chunk_size),
                                                                                                       commit_step,
                                                                                                       compress_index)
                 print('starting: {}'.format(extra))
-                data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
+                data = VersionedDataStore(path=data_path, shape=dimensions[0], raw_chunk_size=raw_chunk_size,
                                      index_chunk_size=index_chunk_size,
                                      index_compression=compress_index)
 

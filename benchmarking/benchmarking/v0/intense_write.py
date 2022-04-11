@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import random
 
-sys.path.append('../')
+sys.path.append('../../../')
 
 from versionedzarrlib import *
 

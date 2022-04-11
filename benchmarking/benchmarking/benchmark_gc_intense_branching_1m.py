@@ -3,8 +3,9 @@ import sys
 from tqdm import tqdm
 import numpy as np
 from config import *
+from path_config import *
 sys.path.append('../../')
-
+from ..benchmark import *
 from versionedzarrlib import *
 
 
@@ -13,7 +14,7 @@ extra  = "1M_checkout_50_size_1000p3_index_1p3_compression_{}".format(compress_i
 dummy_data = np.zeros(raw_chunk_size, dtype='i8')
 branches = ["master", "t1", "t2", "t3", "t4", "t5", "t6"]
 initiated_branches = [True, False, False, False, False, False, False]
-data = VersionedData(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size, index_chunk_size=index_chunk_size,
+data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size, index_chunk_size=index_chunk_size,
                      index_compression=compress_index)
 data.create(overwrite=True)
 
