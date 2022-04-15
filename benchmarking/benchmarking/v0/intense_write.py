@@ -4,13 +4,13 @@ import random
 
 sys.path.append('../../../')
 
-from versionedzarrlib import *
+from versionedzarrlib import VersionedDataStore
 
 root_path = "/Users/Marwan/Desktop/activelearning/data/versioned_data"
 
 dims = (600, 600, 600)
 chunk_size = (128, 128, 128)
-data = VersionedZarrData(root_path, dimension=dims, chunk_size=chunk_size, mode=ALL_IN_ONE_CHUNK_MODE)
+data = VersionedDataStore(root_path, dimension=dims)
 data.create(overwrite=True)
 #
 dummy_data = np.ones(data.chunk_size, dtype='i8')

@@ -7,7 +7,7 @@ import dask.array as da
 import numpy as np
 import zarr
 from zarr.storage import NestedDirectoryStore
-from .exceptions import InvalidDataDaskFillError
+from .exceptions import  InvalidDataDaskFillError
 from .vc import VCS
 from .metadata import Metadata
 from .util import fromfile, tofile
@@ -15,10 +15,11 @@ from .util import fromfile, tofile
 
 class VersionedDataStore(NestedDirectoryStore):
     DEFAULT_INDEX_CHUNK_SIZE = 64
+    DEFAULT_RAW_CHUNK_SIZE = 128
     _index_dataset_name = "indexes"
     _raw_dir = "raw/"
 
-    def __init__(self, path: str, shape: [int], raw_chunk_size: [int], index_chunk_size: [int] = None, d_type=np.int8,
+    def __init__(self, path: str, shape: [int], raw_chunk_size: [int] = None, index_chunk_size: [int] = None, d_type=np.int8,
                  normalize_keys=False, zarr_compressor="default", git_compressor=0, zarr_filters=None,
                  index_d_type=np.uint64,
                  dimension_separator="/"):
@@ -37,12 +38,16 @@ class VersionedDataStore(NestedDirectoryStore):
         # Used for Zarr Storage
         self._normalize_keys = normalize_keys
 
-        self.raw_chunk_size = raw_chunk_size
         self._dimension_separator = dimension_separator
         if index_chunk_size is not None:
             self._index_chunk_size = index_chunk_size
         else:
             self._index_chunk_size = [self.DEFAULT_INDEX_CHUNK_SIZE] * len(shape)
+
+        if raw_chunk_size is not None:
+            self.raw_chunk_size = raw_chunk_size
+        else:
+            self.raw_chunk_size = [self.DEFAULT_RAW_CHUNK_SIZE] * len(shape)
 
         self.d_type = d_type
         self._index_chunk_size = index_chunk_size
