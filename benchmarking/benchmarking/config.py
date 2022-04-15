@@ -10,5 +10,5 @@ df_step = 50
 
 gc_step = gc_steps[0]
 compress_index = compress_indexes[0]
-index_chunk_size = index_chunk_sizes[0]
-dims = dimensions[0]
+index_chunk_size = (64,64,64)
+dims = (1000, 1000, 1000)

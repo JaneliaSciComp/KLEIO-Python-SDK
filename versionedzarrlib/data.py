@@ -7,10 +7,11 @@ import dask.array as da
 import numpy as np
 import zarr
 from zarr.storage import NestedDirectoryStore
-from .exceptions import  InvalidDataDaskFillError
-from .vc import VCS
+
+from .exceptions import InvalidDataDaskFillError
 from .metadata import Metadata
 from .util import fromfile, tofile
+from .vc import VCS
 
 
 class VersionedDataStore(NestedDirectoryStore):
@@ -19,7 +20,8 @@ class VersionedDataStore(NestedDirectoryStore):
     _index_dataset_name = "indexes"
     _raw_dir = "raw/"
 
-    def __init__(self, path: str, shape: [int], raw_chunk_size: [int] = None, index_chunk_size: [int] = None, d_type=np.int8,
+    def __init__(self, path: str, shape: [int], raw_chunk_size: [int] = None, index_chunk_size: [int] = None,
+                 d_type=np.int8,
                  normalize_keys=False, zarr_compressor="default", git_compressor=0, zarr_filters=None,
                  index_d_type=np.uint64,
                  dimension_separator="/"):
@@ -70,9 +72,9 @@ class VersionedDataStore(NestedDirectoryStore):
                 return
         os.mkdir(self.path)
         os.mkdir(self._raw_path)
-        self.create_new_dataset()
+        self._create_new_dataset()
 
-    def create_new_dataset(self, data=None):
+    def _create_new_dataset(self):
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
         compressor = self._zarr_compressor
         filters = self._zarr_filters
@@ -82,17 +84,16 @@ class VersionedDataStore(NestedDirectoryStore):
         metadata.create_like(path=self.path, like=self._index_dataset_path)
         self.vc.init_repo()
         print("Dataset created!")
-        if data is not None:
-            if data is da.Array:
-                self.fill_index_dataset(data)
-            else:
-                raise InvalidDataDaskFillError()
 
     def fill_index_dataset(self, data):
-        dest = zarr.open(self._index_dataset_path)
-        print("Filling data ..")
-        da.store(data, dest)
-        print("Data filled.")
+        if data is not None:
+            if isinstance(data, da.Array):
+                dest = zarr.open(self._index_dataset_path)
+                print("Filling data ..")
+                da.store(data, dest)
+                print("Data filled.")
+            else:
+                raise InvalidDataDaskFillError(type(data))
 
     def _get_ids(self):
         z = zarr.open(self._index_dataset_path, mode='r')
