@@ -49,9 +49,9 @@ def main():
         data.create(overwrite=True)
         dask_data = dask_data.rechunk(index_chunk_size)
         print("Array reshaped")
-        data.create_new_dataset(data=dask_data)
+        data.fill_index_dataset(data=dask_data)
 
-        data.git.init()
+        # data.vc.init_repo()
         for commit_step in commits_once:
 
             print("rechunked")

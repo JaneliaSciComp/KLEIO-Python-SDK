@@ -34,6 +34,8 @@ class VCS(object):
             # https://github.com/git/git/blob/v2.3.0/Documentation/config.txt#L2155
             # From https://stackoverflow.com/a/28383598/3602294
             # Enable git push to this branch
+            if not cw.has_section("receive"):
+                cw.add_section("receive")
             cw.set("receive", "denyCurrentBranch", "updateInstead")
 
         # self.commit('Initial commit')
