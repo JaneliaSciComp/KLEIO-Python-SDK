@@ -45,8 +45,7 @@ def main():
     for index_chunk_size in index_chunk_sizes:
         pos_i = 0
         data = VersionedDataStore(path=data_path, shape=dims, raw_chunk_size=raw_chunk_size,
-                                  index_chunk_size=index_chunk_size,
-                                  index_compression=compress_index)
+                                  index_chunk_size=index_chunk_size)
         data.create(overwrite=True)
         dask_data = dask_data.rechunk(index_chunk_size)
         print("Array reshaped")
