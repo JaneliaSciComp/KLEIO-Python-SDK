@@ -1,11 +1,12 @@
 import sys
 
 sys.path.append('../../')
+sys.path.append('../')
 
 # from config import *
 from path_config import *
 from utils import *
-from ..benchmark import *
+from benchmark import *
 from versionedzarrlib import *
 import numpy as np
 import dask.array as da

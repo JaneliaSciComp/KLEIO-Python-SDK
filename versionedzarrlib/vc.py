@@ -31,6 +31,7 @@ class VCS(object):
         repo = Repo.init(self._path)
         with repo.config_writer() as cw:
             cw.set("core", "compression", "0")
+            # https://github.com/git/git/blob/v2.3.0/Documentation/config.txt#L2155
             # From https://stackoverflow.com/a/28383598/3602294
             # Enable git push to this branch
             cw.set("receive", "denyCurrentBranch", "updateInstead")
