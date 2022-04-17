@@ -43,15 +43,16 @@ def main():
 
     data.fill_index_dataset(data=dask_data)
 
-    data.git.init()
+    data.vc.init_repo()
 
     for i in tqdm(range(iterations)):
         pos = (
             random.randint(0, dims[0] - 1), random.randint(0, dims[1] - 1),
             random.randint(0, dims[2] - 1))
-        index = data.get_next_index()
-        data.update_index(index, pos)
-        data.commit("Add {} at {}".format(index, pos))
+        index = data._get_next_index()
+        data._update_index(index, pos)
+        data.vc.add_all()
+        data.vc.commit("Add {} at {}".format(index, pos))
 
 
 
