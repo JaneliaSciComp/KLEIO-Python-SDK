@@ -6,13 +6,15 @@ from pathlib import Path
 import dask.array as da
 import numpy as np
 import zarr
+from zarr.storage import NestedDirectoryStore
 
 from .exceptions import InvalidDataDaskFillError
 from .metadata import Metadata
+from .util import fromfile, tofile
 from .vc import VCS
 
 
-class VersionedData():
+class VersionedDataStore(NestedDirectoryStore):
     DEFAULT_INDEX_CHUNK_SIZE = 64
     DEFAULT_RAW_CHUNK_SIZE = 128
     _index_dataset_name = "indexes"
@@ -20,9 +22,11 @@ class VersionedData():
 
     def __init__(self, path: str, shape: [int], raw_chunk_size: [int] = None, index_chunk_size: [int] = None,
                  d_type=np.int8,
-                 zarr_compressor="default", git_compressor=0, zarr_filters=None,
-                 index_d_type=np.uint64):
+                 normalize_keys=False, zarr_compressor="default", git_compressor=0, zarr_filters=None,
+                 index_d_type=np.uint64,
+                 dimension_separator="/"):
 
+        super().__init__(path, normalize_keys, dimension_separator)
         self.path = path
         self.shape = shape
 
@@ -33,6 +37,10 @@ class VersionedData():
         self._zarr_filters = zarr_filters
         self._zarr_compressor = zarr_compressor
         self._index_d_type = index_d_type
+        # Used for Zarr Storage
+        self._normalize_keys = normalize_keys
+
+        self._dimension_separator = dimension_separator
         if index_chunk_size is not None:
             self._index_chunk_size = index_chunk_size
         else:
@@ -139,11 +147,41 @@ class VersionedData():
         metadata = Metadata.read_metadata(self.path)
         return metadata.total_chunks
 
+    # TODO test more get set items
+    def __getitem__(self, key):
+        if self._is_chunk_key(key):
+            # k = self._normalize_key(key, self._dimension_separator)
+            k = self._normalize_chunk_key(key)
+            z = zarr.open(self._index_dataset_path)
+            position = z[k]
+            if position > 0:
+                file_to_open = os.path.join(self._raw_path, "{}".format(position))
+                print("File to open:" + file_to_open)
+                if os.path.exists(file_to_open):
+                    return fromfile(file_to_open)
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if self._is_chunk_key(key):
+            new_chunk_index: np.uint64 = Metadata.next_chunk(path=self.path)
+            new_file = os.path.join(self._raw_path, "{}".format(new_chunk_index))
+            print("New file {}".format(new_file))
+            tofile(value, new_file)
+
+            grid_position = self._normalize_chunk_key(key)
+            z = zarr.open(self._index_dataset_path, mode='a')
+            print("Writing {}".format(grid_position))
+            z[grid_position] = new_chunk_index
+            self.vc.add_all()
+            self.vc.commit("Add {} at {}".format(new_chunk_index, grid_position))
+        else:
+            super().__setitem__(key, value)
+
     @staticmethod
     def open(path: str):
         metadata = Metadata.read_metadata(path)
-        data = VersionedData(path=path, shape=metadata.shape, raw_chunk_size=metadata.chunks,
-                             d_type=metadata.dtype)
+        data = VersionedDataStore(path=path, shape=metadata.shape, raw_chunk_size=metadata.chunks,
+                                  d_type=metadata.dtype)
         return data
 
     # For Benchmarking
@@ -179,5 +217,5 @@ class VersionedData():
     def _is_chunk_key(key):
         return str(key).__contains__('/')
 
-# class VersionedIndexArray(object):
-#
+    def _normalize_chunk_key(self, key):
+        return tuple([int(i) for i in str(key).split(self._dimension_separator)])

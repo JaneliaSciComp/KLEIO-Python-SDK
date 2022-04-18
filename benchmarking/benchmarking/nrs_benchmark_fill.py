@@ -18,7 +18,7 @@ import random
 def main():
     commits_once = [10]
     dims = (500, 500, 500)
-    index_chunk_sizes = [(200, 200, 200), (100, 100, 100), (50, 50, 50), (64, 64, 64), (55, 55, 55), (45, 45, 45),
+    index_chunk_sizes = [(100, 100, 100), (50, 50, 50), (64, 64, 64), (55, 55, 55), (45, 45, 45),
                          (32, 32, 32), (16, 16, 16)]
     iterations = 1000
     raw_chunk_size = (1, 1, 1)
@@ -56,7 +56,7 @@ def main():
         for commit_step in commits_once:
 
             print("rechunked")
-            extra = "nrs_{}_shape_{}_index_{}_commit_{}_compression_{}".format(commit_step,
+            extra = "ssd_{}_shape_{}_index_{}_commit_{}_compression_{}".format(commit_step,
                                                                                        format_tuple(
                                                                                            dims),
                                                                                        format_tuple(
