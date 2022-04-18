@@ -15,9 +15,9 @@ import random
 
 
 def main():
-    commits_once = [1, 5, 10, 20, 30, 40, 60, 120]
-    dims = (1000, 1000, 1000)
-    index_chunk_sizes = [(200, 200, 200), (100, 100, 100), (50, 50, 50), (64, 64, 64), (55, 55, 55), (45, 45, 45),
+    commits_once = [1, 5, 10, 20, 30,  60]
+    dims = (500,500,500)
+    index_chunk_sizes = [(100, 100, 100), (50, 50, 50), (64, 64, 64), (55, 55, 55), (45, 45, 45),
                          (32, 32, 32), (16, 16, 16)]
     iterations = 10 * sum(commits_once)
     raw_chunk_size = (1, 1, 1)
@@ -55,7 +55,7 @@ def main():
         for commit_step in commits_once:
 
             print("rechunked")
-            extra = "best_commit_{}_shape_{}_index_{}_commit_{}_compression_{}".format(commit_step,
+            extra = "ssd_{}_shape_{}_index_{}_commit_{}_compression_{}".format(commit_step,
                                                                                        format_tuple(
                                                                                            dims),
                                                                                        format_tuple(
@@ -85,14 +85,15 @@ def main():
                     # print("{}/{}".format(pos_i))
                     pos = positions[pos_i]
                     i_commit = i_commit + 1
-                    index = data.get_next_index()
-                    data.update_index(index, pos)
+                    index = data._get_next_index()
+                    data._update_index(index, pos)
                     pos_i = pos_i + 1
 
                 b = TimeBenchmark(pos_i)
                 i_commit = 0
                 b.start_element(Commit_time)
-                data.commit("Add {} at {}".format(index, pos))
+                data.vc.add_all()
+                data.vc.commit("Add {} at {}".format(index, pos))
                 b.done_element()
                 time_benchmark.write_line(b.format())
 
@@ -100,9 +101,9 @@ def main():
             end_total_size = data.du_size()
 
             b = TimeBenchmark(pos_i)
-            b.start_element(GC_time)
-            data.git.gc()
-            b.done_element()
+            # b.start_element(GC_time)
+            # data.git.gc()
+            # b.done_element()
             time_benchmark.write_line(b.format())
             end_after_gc = data.du_size()
             git_end_after_gc = data.git_size()
