@@ -12,10 +12,11 @@ from .metadata import Metadata
 from .vc import VCS
 
 
-class VersionedData():
+class VersionedData:
     DEFAULT_INDEX_CHUNK_SIZE = 64
     DEFAULT_RAW_CHUNK_SIZE = 128
     _index_dataset_name = "indexes"
+
     _raw_dir = "raw/"
 
     def __init__(self, path: str, shape: [int], raw_chunk_size: [int] = None, index_chunk_size: [int] = None,
@@ -28,7 +29,7 @@ class VersionedData():
 
         self._raw_path = os.path.join(self.path, self._raw_dir)
         # For index matrix
-        self._index_dataset_path = os.path.join(self.path, self._index_dataset_name)
+        self._indexes_path = os.path.join(self.path, self._index_dataset_name)
         self.vc_compressor = git_compressor
         self._zarr_filters = zarr_filters
         self._zarr_compressor = zarr_compressor
@@ -48,9 +49,8 @@ class VersionedData():
 
         self._index_matrix_dimension = self._get_grid_dimensions(self.shape, self.raw_chunk_size)
         print('Grid dimensions: {}'.format(self._index_matrix_dimension))
-        self.vc = VCS(self._index_dataset_path)
 
-    def create(self, overwrite=False):
+    def create_dataset(self, overwrite=False):
         print("Start file creation ..")
         if os.path.exists(self.path):
             print("File already exists ! ")
@@ -64,15 +64,19 @@ class VersionedData():
                 return
         os.mkdir(self.path)
         os.mkdir(self._raw_path)
+        self.vc = VCS(self._index_dataset_path)
         self._create_new_dataset()
 
     def _create_new_dataset(self):
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
-        compressor = self._zarr_compressor
-        filters = self._zarr_filters
-        zarr.open(self._index_dataset_path, shape=self._index_matrix_dimension,
-                  chunks=self._index_chunk_size, mode='w-',
-                  dtype=self._index_d_type, compression=compressor, filters=filters)
+        indexes_dataset_path = os.path.join(self._indexes_path, "main")
+        self._indexes_ds = VersionedIndexArray(path=indexes_dataset_path, raw_path=self._raw_path,
+                                               compressor=self._zarr_compressor, filters=self._zarr_filters,
+                                               create=True,
+                                               master=True)
+
+        metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
+
         metadata.create_like(path=self.path, like=self._index_dataset_path)
         self.vc.init_repo()
         print("Dataset created!")
@@ -179,5 +183,38 @@ class VersionedData():
     def _is_chunk_key(key):
         return str(key).__contains__('/')
 
-# class VersionedIndexArray(object):
-#
+
+class VersionedIndexArray(object):
+    _main_index_dataset = "main"
+
+    def __init__(self, path, global_metadata, shape=None, chunk_size = None, d_type = np.uint6464, compressor="default", filters=None, create=False, master=False, parent = None):
+        super().__init__()
+        self.path = os.path.join(path,self._main_index_dataset)
+        self._is_master = master
+        self._global_metadata = global_metadata
+        self.vc = VCS(self.path)
+        if master:
+            if create:
+                os.mkdir(path)
+                self._chunk_size = chunk_size
+                self._shape = shape
+                zarr.open(self.path, shape=shape,
+                          chunks=chunk_size, mode='w-',
+                          dtype=d_type, compression=compressor, filters=filters)
+                self.vc.init_repo()
+            else:
+                with zarr.open(self.path) as z:
+                    self._shape = z.shape
+                    self._chunk_size = z.chunks
+        else:
+            if create:
+                os.mkdir(path)
+                parent.vc.clone(self.path)
+                self.vc.init_repo()
+
+
+
+    def create_dataset(self, name):
+        _main_index_dataset = "main"
+        # new_path =
+        # new_dataset = VersionedIndexArray()

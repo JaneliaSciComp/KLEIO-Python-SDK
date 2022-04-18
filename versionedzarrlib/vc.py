@@ -1,7 +1,9 @@
 import os
 import time
-from .exceptions import InvalidCompressionIndexError
+
 from git import Repo, NoSuchPathError
+
+from .exceptions import InvalidCompressionIndexError
 
 
 class VCS(object):
@@ -87,6 +89,10 @@ class VCS(object):
         else:
             # print("Moved to branch: {}".format(branch_name))
             repo.git.checkout(branch_name)
+
+    def clone_to(self, dist_path):
+        Repo.clone_from(self._path, dist_path)
+        print("cloned.")
 
     def gc(self):
         """Collect garbage, to be run every while """
