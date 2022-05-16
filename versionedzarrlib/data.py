@@ -68,7 +68,6 @@ class VersionedData:
         self._create_new_dataset()
 
     def _create_new_dataset(self):
-        metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
         indexes_dataset_path = os.path.join(self._indexes_path, "main")
         self._indexes_ds = VersionedIndexArray(path=indexes_dataset_path, raw_path=self._raw_path,
                                                compressor=self._zarr_compressor, filters=self._zarr_filters,
@@ -179,17 +178,14 @@ class VersionedData:
             result.append(val)
         return result
 
-    @staticmethod
-    def _is_chunk_key(key):
-        return str(key).__contains__('/')
-
 
 class VersionedIndexArray(object):
     _main_index_dataset = "main"
 
-    def __init__(self, path, global_metadata, shape=None, chunk_size = None, d_type = np.uint6464, compressor="default", filters=None, create=False, master=False, parent = None):
+    def __init__(self, path, global_metadata, shape=None, chunk_size=None, d_type=np.uint6464, compressor="default",
+                 filters=None, create=False, master=False, parent=None):
         super().__init__()
-        self.path = os.path.join(path,self._main_index_dataset)
+        self.path = os.path.join(path, self._main_index_dataset)
         self._is_master = master
         self._global_metadata = global_metadata
         self.vc = VCS(self.path)
@@ -211,10 +207,3 @@ class VersionedIndexArray(object):
                 os.mkdir(path)
                 parent.vc.clone(self.path)
                 self.vc.init_repo()
-
-
-
-    def create_dataset(self, name):
-        _main_index_dataset = "main"
-        # new_path =
-        # new_dataset = VersionedIndexArray()

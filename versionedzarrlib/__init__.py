@@ -1,1 +1,1 @@
-from .data import VersionedDataStore
+from .data import VersionedData
