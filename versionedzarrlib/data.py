@@ -19,10 +19,18 @@ class VersionedData:
 
     _raw_dir = "raw/"
 
-    def __init__(self, path: str, shape: [int], raw_chunk_size: [int] = None, index_chunk_size: [int] = None,
+    def __init__(self,
+                 host: str,
+                 path: str,
+                 shape: [int],
+                 raw_chunk_size: [int] = None,
+                 index_chunk_size: [int] = None,
                  d_type=np.int8,
-                 zarr_compressor="default", git_compressor=0, zarr_filters=None,
-                 index_d_type=np.uint64):
+                 zarr_compressor="default",
+                 git_compressor=0,
+                 zarr_filters=None,
+                 index_d_type=np.uint64,
+                 remote_access=True):
 
         self.path = path
         self.shape = shape
@@ -68,7 +76,7 @@ class VersionedData:
         self._create_new_dataset()
 
     def _create_new_dataset(self):
-        self._indexes_ds = VersionedIndexArray(path=self._indexes_path,shape=self._index_matrix_dimension,
+        self._indexes_ds = VersionedIndexArray(path=self._indexes_path, shape=self._index_matrix_dimension,
                                                compressor=self._zarr_compressor, filters=self._zarr_filters,
                                                create=True,
                                                master=True)
@@ -183,7 +191,7 @@ class VersionedData:
 
 class VersionedIndexArray(object):
 
-    def __init__(self, path,  shape=None, chunk_size=None, d_type=np.uint64, compressor="default",
+    def __init__(self, path, shape=None, chunk_size=None, d_type=np.uint64, compressor="default",
                  filters=None, create=False, master=False, parent=None):
         super().__init__()
         self.path = path
