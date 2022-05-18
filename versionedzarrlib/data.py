@@ -26,7 +26,7 @@ class VersionedData:
 
         self.path = path
         self.shape = shape
-
+        # TODO this will be data store
         self._raw_path = os.path.join(self.path, self._raw_dir)
         # For index matrix
         self._indexes_path = os.path.join(self.path, self._index_dataset_name)
@@ -50,7 +50,7 @@ class VersionedData:
         self._index_matrix_dimension = self._get_grid_dimensions(self.shape, self.raw_chunk_size)
         print('Grid dimensions: {}'.format(self._index_matrix_dimension))
 
-    def create_dataset(self, overwrite=False):
+    def create(self, overwrite=False):
         print("Start file creation ..")
         if os.path.exists(self.path):
             print("File already exists ! ")
@@ -64,21 +64,18 @@ class VersionedData:
                 return
         os.mkdir(self.path)
         os.mkdir(self._raw_path)
-        self.vc = VCS(self._index_dataset_path)
+        # self.vc = VCS(self._indexes_path)
         self._create_new_dataset()
 
     def _create_new_dataset(self):
-        metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
-        indexes_dataset_path = os.path.join(self._indexes_path, "main")
-        self._indexes_ds = VersionedIndexArray(path=indexes_dataset_path, raw_path=self._raw_path,
+        self._indexes_ds = VersionedIndexArray(path=self._indexes_path,shape=self._index_matrix_dimension,
                                                compressor=self._zarr_compressor, filters=self._zarr_filters,
                                                create=True,
                                                master=True)
 
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
 
-        metadata.create_like(path=self.path, like=self._index_dataset_path)
-        self.vc.init_repo()
+        metadata.create_like(path=self.path, like=self._indexes_path)
         print("Dataset created!")
 
     def fill_index_dataset(self, data):
@@ -185,13 +182,12 @@ class VersionedData:
 
 
 class VersionedIndexArray(object):
-    _main_index_dataset = "main"
 
-    def __init__(self, path, global_metadata, shape=None, chunk_size = None, d_type = np.uint6464, compressor="default", filters=None, create=False, master=False, parent = None):
+    def __init__(self, path,  shape=None, chunk_size=None, d_type=np.uint64, compressor="default",
+                 filters=None, create=False, master=False, parent=None):
         super().__init__()
-        self.path = os.path.join(path,self._main_index_dataset)
+        self.path = path
         self._is_master = master
-        self._global_metadata = global_metadata
         self.vc = VCS(self.path)
         if master:
             if create:
@@ -211,8 +207,6 @@ class VersionedIndexArray(object):
                 os.mkdir(path)
                 parent.vc.clone(self.path)
                 self.vc.init_repo()
-
-
 
     def create_dataset(self, name):
         _main_index_dataset = "main"
