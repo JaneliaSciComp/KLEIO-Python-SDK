@@ -50,6 +50,8 @@ class RemoteClient:
             print(
                 f"Finished uploading {folder} files to {remote_path} on {self.host}"
             )
+            stdin, stdout, stderr = self.connection.exec_command(f"ls -la {remote_path}")
+            print(f"{stdout.read().decode()} \n error:{stderr.read().decode()}")
         except SCPException as e:
             raise e
 

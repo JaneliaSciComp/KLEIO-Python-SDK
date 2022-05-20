@@ -207,9 +207,8 @@ class RemoteVersionedData(VersionedData):
         print(f"Temp Folder: {tmp_dir}")
         self._set_path(os.path.join(tmp_dir, os.path.basename(self.remote_path)))
         super().create(overwrite)
-
-        self.remote_client.upload([self.path],self.remote_path)
-
+        remote_parent = os.path.dirname(self.remote_path)
+        self.remote_client.upload([self.path], remote_parent)
 
 
 class VersionedIndexArray(object):
