@@ -3,6 +3,7 @@ import time
 
 from git import Repo, NoSuchPathError
 
+from .ssh import RemoteClient
 from .exceptions import InvalidCompressionIndexError
 
 
@@ -98,3 +99,15 @@ class VCS(object):
         """Collect garbage, to be run every while """
         repo = Repo.init(self._path)
         repo.git.gc()
+
+    @classmethod
+    def remote_clone(cls, remote_client: RemoteClient, remote_path, path):
+        try:
+            repo = Repo.clone_from(f"ssh://{remote_client.host}:{remote_path}",
+                                   path, env={
+                    "GIT_SSH_COMMAND": f"sshpass -p {remote_client.password} ssh -l {remote_client.user}"})
+        except Exception as e:
+            print("Error!")
+            print(e)
+        else:
+            print("Repo cloned successfully!")

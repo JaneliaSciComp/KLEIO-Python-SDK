@@ -4,10 +4,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import dask.array as da
 import numpy as np
 import zarr
-from .exceptions import InvalidDataDaskFillError
 from .metadata import Metadata
 from .vc import VCS
 from .ssh import RemoteClient
@@ -31,40 +29,40 @@ class VersionedData:
                  zarr_filters=None,
                  index_d_type=np.uint64):
 
+        self._index_matrix_dimension = None
         self.path = path
         self.shape = shape
-        # TODO this will be data store
-        self._raw_path = os.path.join(self.path, self._raw_dir)
+        # self._raw_path = os.path.join(self.path, self._raw_dir)
         # For index matrix
-        self._indexes_path = os.path.join(self.path, self._index_dataset_name)
+        # self._indexes_path = os.path.join(self.path, self._index_dataset_name)
         self.vc_compressor = git_compressor
         self._zarr_filters = zarr_filters
         self._zarr_compressor = zarr_compressor
         self._index_d_type = index_d_type
-        if index_chunk_size is not None:
-            self._index_chunk_size = index_chunk_size
-        else:
-            self._index_chunk_size = [self.DEFAULT_INDEX_CHUNK_SIZE] * len(shape)
 
-        if raw_chunk_size is not None:
-            self.raw_chunk_size = raw_chunk_size
-        else:
-            self.raw_chunk_size = [self.DEFAULT_RAW_CHUNK_SIZE] * len(shape)
-
+        self._index_chunk_size = index_chunk_size
+        self.shape = shape
+        self.raw_chunk_size = raw_chunk_size
         self.d_type = d_type
         self._index_chunk_size = index_chunk_size
-
-        self._index_matrix_dimension = self._get_grid_dimensions(self.shape, self.raw_chunk_size)
-        print('Grid dimensions: {}'.format(self._index_matrix_dimension))
 
     def _set_path(self, path):
         print(f"Path updated {path}")
         self.path = path
-        self._raw_path = os.path.join(self.path, self._raw_dir)
-        self._indexes_path = os.path.join(self.path, self._index_dataset_name)
+        # self._raw_path = os.path.join(self.path, self._raw_dir)
+        # self._indexes_path = os.path.join(self.path, self._index_dataset_name)
 
     def create(self, overwrite=False):
         print("Start file creation ..")
+        if self._index_chunk_size is None:
+            self._index_chunk_size = [self.DEFAULT_INDEX_CHUNK_SIZE] * len(self.shape)
+
+        if self.raw_chunk_size is None:
+            self.raw_chunk_size = [self.DEFAULT_RAW_CHUNK_SIZE] * len(self.shape)
+
+        self._index_matrix_dimension = self._get_grid_dimensions(self.shape, self.raw_chunk_size)
+        print('Grid dimensions: {}'.format(self._index_matrix_dimension))
+
         if os.path.exists(self.path):
             print("File already exists ! ")
             if overwrite:
@@ -75,75 +73,67 @@ class VersionedData:
                     print("Error: %s - %s." % (e.filename, e.strerror))
             else:
                 return
-        os.mkdir(self.path)
-        os.mkdir(self._raw_path)
+        # os.mkdir(self.path)
+        # os.mkdir(self._raw_path)
         # self.vc = VCS(self._indexes_path)
         self._create_new_dataset()
+        self._indexes_ds.vc.add_all()
+        self._indexes_ds.vc.commit("initial commit")
 
     def _create_new_dataset(self):
-        self._indexes_ds = VersionedIndexArray(path=self._indexes_path, shape=self._index_matrix_dimension,
+        self._indexes_ds = VersionedIndexArray(path=self.path, shape=self._index_matrix_dimension,
                                                compressor=self._zarr_compressor, filters=self._zarr_filters,
                                                create=True,
                                                master=True)
 
         metadata = Metadata(shape=self.shape, chunks=self.raw_chunk_size, dtype=self.d_type)
 
-        metadata.create_like(path=self.path, like=self._indexes_path)
+        metadata.create_like(path=self.path, like=self.path)
         print("Dataset created!")
 
-    def fill_index_dataset(self, data):
-        if data is not None:
-            if isinstance(data, da.Array):
-                dest = zarr.open(self._index_dataset_path)
-                print("Filling data ..")
-                da.store(data, dest)
-                print("Data filled.")
-            else:
-                raise InvalidDataDaskFillError(type(data))
-
     def _get_ids(self):
-        z = zarr.open(self._index_dataset_path, mode='r')
+        z = zarr.open(self.path, mode='r')
         return z[:]
 
-    def get_chunk(self, grid_position):
-        z = zarr.open(self._index_dataset_path, mode='r')
-        file_id = z[grid_position]
-        print("raw file for {} is {}".format(grid_position, file_id))
-        if file_id > 0:
-            return self.get_file(file_id)[:]
-        else:
-            print("No data valid for position: {}".format(grid_position))
-        return np.zeros(self.raw_chunk_size, dtype=np.uint64)
+    # def get_chunk(self, grid_position):
+    #     z = zarr.open(self.path, mode='r')
+    #     file_id = z[grid_position]
+    #     print("raw file for {} is {}".format(grid_position, file_id))
+    #     if file_id > 0:
+    #         return self.get_file(file_id)[:]
+    #     else:
+    #         print("No data valid for position: {}".format(grid_position))
+    #     return np.zeros(self.raw_chunk_size, dtype=np.uint64)
 
     def _get_next_index(self):
         return Metadata.next_chunk(path=self.path)
 
-    def save_raw(self, data, index):
-        new_file = os.path.join(self._raw_path, "{}".format(index))
-        # print("New file {}".format(new_file))
-        z = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
-        z[:] = data
+    # def save_raw(self, data, index):
+    #     new_file = os.path.join(self._raw_path, "{}".format(index))
+    #     # print("New file {}".format(new_file))
+    #     z = zarr.open(new_file, shape=self.raw_chunk_size, chunks=self.raw_chunk_size, mode='w-', dtype=data.dtype)
+    #     z[:] = data
 
     def _update_index(self, index, position):
-        z = zarr.open(self._index_dataset_path, mode='a')
+        z = zarr.open(self.path, mode='a')
         # print("Writing {}".format(position))
         z[position] = index
 
-    def write_block(self, data, grid_position):
-        new_chunk_index: np.uint64 = self._get_next_index()
-        self.save_raw(data, new_chunk_index)
+    # def write_block(self, data, grid_position):
+    #     new_chunk_index: np.uint64 = self._get_next_index()
+    #     self.save_raw(data, new_chunk_index)
+    #
+    #     # np.save(new_file,data)
+    #     # to_file(data, new_file)
+    #     self._update_index(new_chunk_index, grid_position)
 
-        # np.save(new_file,data)
-        # to_file(data, new_file)
-        self._update_index(new_chunk_index, grid_position)
-
-    def get_file(self, file_id: str):
-        file_path = os.path.join(self._raw_path, "{}".format(file_id))
-        print(file_path)
-        return zarr.open(file_path, mode='r')
+    # def get_file(self, file_id: str):
+    #     file_path = os.path.join(self._raw_path, "{}".format(file_id))
+    #     print(file_path)
+    #     return zarr.open(file_path, mode='r')
 
     def block_exists(self, grid_position):
-        z = zarr.open(self._index_dataset_path, mode='a')
+        z = zarr.open(self.path, mode='a')
         if z[grid_position] > 0:
             return 1
         else:
@@ -171,7 +161,7 @@ class VersionedData:
         return subprocess.check_output(["du", "-s", self.path]).decode("utf-8").split()[0]
 
     def git_size(self):
-        path = os.path.join(self._index_dataset_path, ".git")
+        path = os.path.join(self.path, ".git")
         return subprocess.check_output(["du", "-s", path]).decode("utf-8").split()[0]
 
     def get_size(self):
@@ -207,8 +197,19 @@ class RemoteVersionedData(VersionedData):
         print(f"Temp Folder: {tmp_dir}")
         self._set_path(os.path.join(tmp_dir, os.path.basename(self.remote_path)))
         super().create(overwrite)
-        remote_parent = os.path.dirname(self.remote_path)
-        self.remote_client.upload([self.path], remote_parent)
+
+        self.remote_client.upload(self.path, self.remote_path)
+
+    def new_session(self, path):
+        session_id: np.uint64 = self.get_next_id()
+        target_file = os.path.join(path, os.path.basename(self.remote_path))
+        print(f"Target folder: {target_file}")
+        VCS.remote_clone(self.remote_client, self.remote_path, target_file)
+
+    @staticmethod
+    def get_next_id() -> np.uint64:
+        # TODO
+        return 1
 
 
 class VersionedIndexArray(object):

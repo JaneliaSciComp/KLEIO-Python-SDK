@@ -1,3 +1,5 @@
+import os
+
 import paramiko
 # import base64
 from scp import SCPClient, SCPException
@@ -46,7 +48,8 @@ class RemoteClient:
         type files: List[str]
         """
         try:
-            self.scp.put(folder, recursive=True, remote_path=remote_path)
+            remote_parent = os.path.dirname(remote_path)
+            self.scp.put(folder, recursive=True, remote_path=remote_parent)
             print(
                 f"Finished uploading {folder} files to {remote_path} on {self.host}"
             )
