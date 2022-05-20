@@ -1,15 +1,16 @@
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import dask.array as da
 import numpy as np
 import zarr
-
 from .exceptions import InvalidDataDaskFillError
 from .metadata import Metadata
 from .vc import VCS
+from .ssh import RemoteClient
 
 
 class VersionedData:
@@ -20,17 +21,15 @@ class VersionedData:
     _raw_dir = "raw/"
 
     def __init__(self,
-                 host: str,
                  path: str,
-                 shape: [int],
+                 shape: [int] = None,
                  raw_chunk_size: [int] = None,
                  index_chunk_size: [int] = None,
                  d_type=np.int8,
                  zarr_compressor="default",
                  git_compressor=0,
                  zarr_filters=None,
-                 index_d_type=np.uint64,
-                 remote_access=True):
+                 index_d_type=np.uint64):
 
         self.path = path
         self.shape = shape
@@ -57,6 +56,12 @@ class VersionedData:
 
         self._index_matrix_dimension = self._get_grid_dimensions(self.shape, self.raw_chunk_size)
         print('Grid dimensions: {}'.format(self._index_matrix_dimension))
+
+    def _set_path(self, path):
+        print(f"Path updated {path}")
+        self.path = path
+        self._raw_path = os.path.join(self.path, self._raw_dir)
+        self._indexes_path = os.path.join(self.path, self._index_dataset_name)
 
     def create(self, overwrite=False):
         print("Start file creation ..")
@@ -184,9 +189,27 @@ class VersionedData:
             result.append(val)
         return result
 
-    @staticmethod
-    def _is_chunk_key(key):
-        return str(key).__contains__('/')
+
+class RemoteVersionedData(VersionedData):
+
+    def __init__(self, remote_client: RemoteClient, path: str, shape: [int] = None, raw_chunk_size: [int] = None,
+                 index_chunk_size: [int] = None,
+                 d_type=np.int8, zarr_compressor="default", git_compressor=0, zarr_filters=None,
+                 index_d_type=np.uint64):
+        super().__init__(path, shape, raw_chunk_size, index_chunk_size, d_type, zarr_compressor, git_compressor,
+                         zarr_filters, index_d_type)
+        self.tmp_dir = None
+        self.remote_path = path
+        self.remote_client = remote_client
+
+    def create(self, overwrite=False):
+        tmp_dir = tempfile.mkdtemp()
+        print(f"Temp Folder: {tmp_dir}")
+        self._set_path(os.path.join(tmp_dir, os.path.basename(self.remote_path)))
+        super().create(overwrite)
+
+        self.remote_client.upload([self.path],self.remote_path)
+
 
 
 class VersionedIndexArray(object):
@@ -215,8 +238,3 @@ class VersionedIndexArray(object):
                 os.mkdir(path)
                 parent.vc.clone(self.path)
                 self.vc.init_repo()
-
-    def create_dataset(self, name):
-        _main_index_dataset = "main"
-        # new_path =
-        # new_dataset = VersionedIndexArray()
