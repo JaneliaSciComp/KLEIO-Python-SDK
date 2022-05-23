@@ -39,7 +39,10 @@ class VCS(object):
             # Enable git push to this branch
             if not cw.has_section("receive"):
                 cw.add_section("receive")
-            cw.set("receive", "denyCurrentBranch", "updateInstead")
+            # because server git version is 1.8.0
+            cw.set("receive", "denyCurrentBranch", "false")
+            # for newer git version use (2.3.6)
+            # cw.set("receive", "denyCurrentBranch", "updateInstead")
 
         # self.commit('Initial commit')
 
@@ -99,6 +102,12 @@ class VCS(object):
         """Collect garbage, to be run every while """
         repo = Repo.init(self._path)
         repo.git.gc()
+
+    @staticmethod
+    def push(path,remoteClient:RemoteClient):
+        repo = Repo(path)
+        repo.remotes.origin.push(www)
+        repo = Repo.init(self._path)
 
     @classmethod
     def remote_clone(cls, remote_client: RemoteClient, remote_path, path):

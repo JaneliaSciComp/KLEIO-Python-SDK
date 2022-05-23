@@ -201,10 +201,21 @@ class RemoteVersionedData(VersionedData):
         self.remote_client.upload(self.path, self.remote_path)
 
     def new_session(self, path):
-        session_id: np.uint64 = self.get_next_id()
         target_file = os.path.join(path, os.path.basename(self.remote_path))
         print(f"Target folder: {target_file}")
         VCS.remote_clone(self.remote_client, self.remote_path, target_file)
+        return VersionedSession(VersionedData.open(target_file), self.remote_client)
+
+
+class VersionedSession:
+
+    def __init__(self, data: VersionedData, client: RemoteClient, session: np.uint64 = None):
+        self.data = data
+        self._client = client
+        if session is None:
+            self._session = self.get_next_id()
+        else:
+            self._session = session
 
     @staticmethod
     def get_next_id() -> np.uint64:
