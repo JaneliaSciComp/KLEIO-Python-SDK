@@ -104,10 +104,10 @@ class VCS(object):
         repo.git.gc()
 
     @staticmethod
-    def push(path,remoteClient:RemoteClient):
+    def push_repo(path, client: RemoteClient):
         repo = Repo(path)
-        repo.remotes.origin.push(www)
-        repo = Repo.init(self._path)
+        repo.git.push(env={
+            f"GIT_SSH_COMMAND": f"sshpass -p {client.password} ssh -l {client.user}"})
 
     @classmethod
     def remote_clone(cls, remote_client: RemoteClient, remote_path, path):
@@ -120,3 +120,9 @@ class VCS(object):
             print(e)
         else:
             print("Repo cloned successfully!")
+
+    @classmethod
+    def make_bare(cls, path):
+        repo = Repo(path)
+        with repo.config_writer() as cw:
+            cw.set("core", "bare", "true")

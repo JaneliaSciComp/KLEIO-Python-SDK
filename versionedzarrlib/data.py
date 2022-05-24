@@ -192,12 +192,15 @@ class RemoteVersionedData(VersionedData):
         self.remote_path = path
         self.remote_client = remote_client
 
-    def create(self, overwrite=False):
+    def create(self):
         tmp_dir = tempfile.mkdtemp()
+        tmp = os.path.join(tmp_dir, "tmp")
         print(f"Temp Folder: {tmp_dir}")
+        self._set_path(tmp)
+        super().create(overwrite=True)
         self._set_path(os.path.join(tmp_dir, os.path.basename(self.remote_path)))
-        super().create(overwrite)
-
+        shutil.move(os.path.join(tmp, ".git"), self.path)
+        VCS.make_bare(self.path)
         self.remote_client.upload(self.path, self.remote_path)
 
     def new_session(self, path):
@@ -209,18 +212,21 @@ class RemoteVersionedData(VersionedData):
 
 class VersionedSession:
 
-    def __init__(self, data: VersionedData, client: RemoteClient, session: np.uint64 = None):
+    def __init__(self, data: VersionedData, client: RemoteClient, id: np.uint64 = None):
         self.data = data
         self._client = client
-        if session is None:
-            self._session = self.get_next_id()
+        if id is None:
+            self._id = self.get_next_id()
         else:
-            self._session = session
+            self._id = id
 
     @staticmethod
     def get_next_id() -> np.uint64:
         # TODO
         return 1
+
+    def push(self):
+        VCS.push_repo(self.data.path, self._client)
 
 
 class VersionedIndexArray(object):
