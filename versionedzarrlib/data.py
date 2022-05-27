@@ -10,12 +10,14 @@ from .metadata import Metadata
 from .vc import VCS
 from .ssh import RemoteClient
 
+import requests
+
 
 class VersionedData:
     DEFAULT_INDEX_CHUNK_SIZE = 64
     DEFAULT_RAW_CHUNK_SIZE = 128
     _index_dataset_name = "indexes"
-
+    _unique_id_api_url = "http://c13u06.int.janelia.org:8000/v1/id"
     _raw_dir = "raw/"
 
     def __init__(self,
@@ -220,8 +222,10 @@ class VersionedSession:
         else:
             self._id = id
 
-    @staticmethod
-    def get_next_id() -> np.uint64:
+    @classmethod
+    def get_next_id(cls) -> np.uint64:
+        response = requests.post(cls._unique_id_api_url)
+        print(response.json())
         # TODO
         return 1
 
