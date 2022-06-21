@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 setup(
     name='Versionedstoragelib',
     packages=find_packages(),
-    version='0.1.0',
+    version='0.2.0',
     description='Versioned storage',
     author='Marwan Zouinkhi',
     license='MIT',

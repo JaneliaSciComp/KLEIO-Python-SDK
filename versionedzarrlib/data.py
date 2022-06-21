@@ -9,15 +9,16 @@ import zarr
 from .metadata import Metadata
 from .vc import VCS
 from .ssh import RemoteClient
-
+from . import config
 import requests
+import deprecation
 
 
 class VersionedData:
     DEFAULT_INDEX_CHUNK_SIZE = 64
     DEFAULT_RAW_CHUNK_SIZE = 128
     _index_dataset_name = "indexes"
-    _unique_id_api_url = "http://c13u06.int.janelia.org:8000/v1/id"
+
     _raw_dir = "raw/"
 
     def __init__(self,
@@ -78,11 +79,6 @@ class VersionedData:
         # os.mkdir(self.path)
         # os.mkdir(self._raw_path)
         # self.vc = VCS(self._indexes_path)
-        self._create_new_dataset()
-        self._indexes_ds.vc.add_all()
-        self._indexes_ds.vc.commit("initial commit")
-
-    def _create_new_dataset(self):
         self._indexes_ds = VersionedIndexArray(path=self.path, shape=self._index_matrix_dimension,
                                                compressor=self._zarr_compressor, filters=self._zarr_filters,
                                                create=True,
@@ -92,6 +88,9 @@ class VersionedData:
 
         metadata.create_like(path=self.path, like=self.path)
         print("Dataset created!")
+        self._indexes_ds.vc.add_all()
+        self._indexes_ds.vc.commit("initial commit")
+
 
     def _get_ids(self):
         z = zarr.open(self.path, mode='r')
@@ -194,7 +193,13 @@ class RemoteVersionedData(VersionedData):
         self.remote_path = path
         self.remote_client = remote_client
 
+    @deprecation.deprecated(deprecated_in="0.2.0", removed_in="1.0",
+                            current_version=config.__version__,
+                            details="Use create_new_dataset() instead")
     def create(self):
+        self.create_new_dataset()
+
+    def create_new_dataset(self):
         tmp_dir = tempfile.mkdtemp()
         tmp = os.path.join(tmp_dir, "tmp")
         print(f"Temp Folder: {tmp_dir}")
@@ -212,22 +217,27 @@ class RemoteVersionedData(VersionedData):
         return VersionedSession(VersionedData.open(target_file), self.remote_client)
 
 
+def get_next_id() -> np.uint64:
+    try:
+        response = requests.post(config.UNIQUE_ID_API_URL)
+        j_string = response.json()
+        print(f" Session ID: {j_string}")
+        session = np.uint64(j_string)
+        return session
+    except Exception as err:
+        print(f"ERROR: Can't get session id {err}")
+        raise
+
+
 class VersionedSession:
 
-    def __init__(self, data: VersionedData, client: RemoteClient, id: np.uint64 = None):
+    def __init__(self, data: VersionedData, client: RemoteClient, session_id: np.uint64 = None):
         self.data = data
         self._client = client
-        if id is None:
-            self._id = self.get_next_id()
+        if session_id is None:
+            self.session_id = get_next_id()
         else:
-            self._id = id
-
-    @classmethod
-    def get_next_id(cls) -> np.uint64:
-        response = requests.post(cls._unique_id_api_url)
-        print(response.json())
-        # TODO
-        return 1
+            self.session_id = session_id
 
     def push(self):
         VCS.push_repo(self.data.path, self._client)
