@@ -8,7 +8,7 @@ from zarr.util import json_dumps
 
 from .util import fromfile, tofile
 
-file_name = ".zarray"
+file_name = "metadata.json"
 
 
 class Metadata(Metadata2):
@@ -25,7 +25,7 @@ class Metadata(Metadata2):
     #     print("Json Metadata created.")
 
     def create_like(self, path, like):
-        file_to_replicate = os.path.join(like, file_name)
+        file_to_replicate = os.path.join(like, ".zarray")
         meta_bytes = fromfile(file_to_replicate)
         # print(meta_bytes)
         meta = Metadata2.decode_array_metadata(meta_bytes)

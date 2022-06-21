@@ -1,7 +1,10 @@
 import os
 import time
-from .exceptions import InvalidCompressionIndexError
+
 from git import Repo, NoSuchPathError
+
+from .ssh import RemoteClient
+from .exceptions import InvalidCompressionIndexError
 
 
 class VCS(object):
@@ -36,7 +39,10 @@ class VCS(object):
             # Enable git push to this branch
             if not cw.has_section("receive"):
                 cw.add_section("receive")
-            cw.set("receive", "denyCurrentBranch", "updateInstead")
+            # because server git version is 1.8.0
+            cw.set("receive", "denyCurrentBranch", "false")
+            # for newer git version use (2.3.6)
+            # cw.set("receive", "denyCurrentBranch", "updateInstead")
 
         # self.commit('Initial commit')
 
@@ -88,7 +94,35 @@ class VCS(object):
             # print("Moved to branch: {}".format(branch_name))
             repo.git.checkout(branch_name)
 
+    def clone_to(self, dist_path):
+        Repo.clone_from(self._path, dist_path)
+        print("cloned.")
+
     def gc(self):
         """Collect garbage, to be run every while """
         repo = Repo.init(self._path)
         repo.git.gc()
+
+    @staticmethod
+    def push_repo(path, client: RemoteClient):
+        repo = Repo(path)
+        repo.git.push(env={
+            f"GIT_SSH_COMMAND": f"sshpass -p {client.password} ssh -l {client.user}"})
+
+    @classmethod
+    def remote_clone(cls, remote_client: RemoteClient, remote_path, path):
+        try:
+            repo = Repo.clone_from(f"ssh://{remote_client.host}:{remote_path}",
+                                   path, env={
+                    "GIT_SSH_COMMAND": f"sshpass -p {remote_client.password} ssh -l {remote_client.user}"})
+        except Exception as e:
+            print("Error!")
+            print(e)
+        else:
+            print("Repo cloned successfully!")
+
+    @classmethod
+    def make_bare(cls, path):
+        repo = Repo(path)
+        with repo.config_writer() as cw:
+            cw.set("core", "bare", "true")
