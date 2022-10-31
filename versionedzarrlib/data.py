@@ -14,7 +14,7 @@ import requests
 import deprecation
 
 
-class VersionedData:
+class LocalVersionedData(VersionedData):
     DEFAULT_INDEX_CHUNK_SIZE = 64
     DEFAULT_RAW_CHUNK_SIZE = 128
     _index_dataset_name = "indexes"
@@ -179,6 +179,17 @@ class VersionedData:
                 val = val + 1
             result.append(val)
         return result
+
+
+class VersionedData:
+
+    def __init__(self, path: str, shape: [int] = None, raw_chunk_size: [int] = None,
+                 index_chunk_size: [int] = None,
+                 d_type=np.int8, zarr_compressor="default", git_compressor=0, zarr_filters=None,
+                 index_d_type=np.uint64):
+
+        self.tmp_dir = None
+        self.remote_path = path
 
 
 class RemoteVersionedData(VersionedData):

@@ -104,6 +104,11 @@ class VCS(object):
         repo.git.gc()
 
     @staticmethod
+    def push_repo(path):
+        repo = Repo(path)
+        repo.git.push()
+
+    @staticmethod
     def push_repo(path, client: RemoteClient):
         repo = Repo(path)
         repo.git.push(env={
@@ -116,6 +121,7 @@ class VCS(object):
                                    path, env={
                     "GIT_SSH_COMMAND": f"sshpass -p {remote_client.password} ssh -l {remote_client.user}"})
         except Exception as e:
+            # TODO don't use Exception / raise or recover
             print("Error!")
             print(e)
         else:
