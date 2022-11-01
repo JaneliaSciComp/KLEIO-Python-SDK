@@ -1,3 +1,4 @@
+import json
 import os
 
 import numpy as np
@@ -5,7 +6,7 @@ from zarr import MetadataError
 from zarr.meta import Metadata2
 from zarr.util import json_dumps
 
-from kleio.utils.util import fromfile, tofile
+from .util import fromfile, tofile
 
 file_name = "metadata.json"
 

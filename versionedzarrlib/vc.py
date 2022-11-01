@@ -4,7 +4,7 @@ import time
 from git import Repo, NoSuchPathError
 
 from .ssh import RemoteClient
-from .exceptions import InvalidCompressionIndexError
+from kleio.utils.exceptions import InvalidCompressionIndexError
 
 
 class VCS(object):
