@@ -1,18 +1,27 @@
+import os
 import numpy as np
 
-from abstract import DataStore
+from kleio.stores.abstract import DataStore
 from kleio.stores.abstract import DataBlock, DatasetAttributes
-from kleio.utils.exceptions import KleioNotFoundError, InvalidAccessModeError, InvalidAccessPermissionError
+from kleio.utils.exceptions import *
+from kleio.utils.meta import KleioMetadata, BlocksMetadata
 
 
 # TODO check if datastore exist and it is a valid Kleio store
 def is_fs_datastore(path):
+    if not os.path.exists(path):
+        return False
+    if not KleioMetadata.meta_exists_and_valid(path):
+        return False
     return True
 
 
 # TODO create and init kleio data store
 def init_datastore(path):
-    pass
+    if os.path.exists(path):
+        raise KleioInvalidFileError(path)
+    os.mkdir(path)
+    KleioMetadata().save_to_path(path)
 
 
 class FSDataStore(DataStore):
@@ -32,12 +41,20 @@ class FSDataStore(DataStore):
         else:
             raise InvalidAccessModeError(mode)
 
-    def create_dataset(self, name: str, shape: [int], dtype: np.dtype, chunks: [int], compressor="default", **kwargs):
+    def create_dataset(self, dataset: str, shape: [int], dtype: str, chunks: [int], compressor="default",
+                       **kwargs):
         if self._mode != 'w':
             raise InvalidAccessPermissionError(self._mode)
-        super().create_dataset(name, shape, dtype, chunks, compressor, **kwargs)
+        dataset_path = os.path.join(self._path, dataset)
+        if os.path.exists(dataset_path):
+            raise AlreadyExistsError("dataset: " + dataset)
+        os.mkdir(dataset_path)
+        BlocksMetadata(chunks, shape, chunks, dtype).save_to_path(dataset_path)
 
     def get_dataset_attributes(self, dataset: str) -> DatasetAttributes:
+        dataset_path = os.path.join(self._path, dataset)
+        meta = BlocksMetadata.read_from_path(dataset_path)
+        print(meta)
         return super().get_dataset_attributes(dataset)
 
     def read_block(self, dataset: str, grid_position: [int]) -> DataBlock:

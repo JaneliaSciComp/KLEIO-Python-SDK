@@ -17,6 +17,14 @@ class KleioNotFoundError(BaseKleioError):
     _msg = "Kleio store: {0!r} not found"
 
 
+class AlreadyExistsError(BaseKleioError):
+    _msg = "Error: {0!r} already exists !"
+
+
+class KleioInvalidFileError(BaseKleioError):
+    _msg = "Kleio exists but invalid: {0!r} "
+
+
 class InvalidAccessModeError(BaseKleioError):
     _msg = "Invalid Access mode: {0!r} Should be 'r' or 'w'"
 
