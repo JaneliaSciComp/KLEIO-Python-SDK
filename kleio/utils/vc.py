@@ -1,9 +1,9 @@
 import os
 import time
 
-from git import Repo, NoSuchPathError
+from git import Repo, InvalidGitRepositoryError, NoSuchPathError
 
-from .ssh import RemoteClient
+# from versionedzarrlib.ssh import RemoteClient
 from kleio.utils.exceptions import InvalidCompressionIndexError
 
 
@@ -24,6 +24,13 @@ class VCS(object):
             raise InvalidCompressionIndexError(compression)
         self._path = path
         self._compression = compression
+
+    def is_git_repo(self):
+        try:
+            _ = Repo(self._path).git_dir
+            return True
+        except InvalidGitRepositoryError:
+            return False
 
     def init_repo(self):
         """Initialize a vcs repository at the given path if specified
@@ -108,24 +115,26 @@ class VCS(object):
         repo = Repo(path)
         repo.git.push()
 
-    @staticmethod
-    def push_repo(path, client: RemoteClient):
-        repo = Repo(path)
-        repo.git.push(env={
-            f"GIT_SSH_COMMAND": f"sshpass -p {client.password} ssh -l {client.user}"})
+    # TODO remote change
 
-    @classmethod
-    def remote_clone(cls, remote_client: RemoteClient, remote_path, path):
-        try:
-            repo = Repo.clone_from(f"ssh://{remote_client.host}:{remote_path}",
-                                   path, env={
-                    "GIT_SSH_COMMAND": f"sshpass -p {remote_client.password} ssh -l {remote_client.user}"})
-        except Exception as e:
-            # TODO don't use Exception / raise or recover
-            print("Error!")
-            print(e)
-        else:
-            print("Repo cloned successfully!")
+    # @staticmethod
+    # def push_repo(path, client: RemoteClient):
+    #     repo = Repo(path)
+    #     repo.git.push(env={
+    #         f"GIT_SSH_COMMAND": f"sshpass -p {client.password} ssh -l {client.user}"})
+    #
+    # @classmethod
+    # def remote_clone(cls, remote_client: RemoteClient, remote_path, path):
+    #     try:
+    #         repo = Repo.clone_from(f"ssh://{remote_client.host}:{remote_path}",
+    #                                path, env={
+    #                 "GIT_SSH_COMMAND": f"sshpass -p {remote_client.password} ssh -l {remote_client.user}"})
+    #     except Exception as e:
+    #         # TODO don't use Exception / raise or recover
+    #         print("Error!")
+    #         print(e)
+    #     else:
+    #         print("Repo cloned successfully!")
 
     @classmethod
     def make_bare(cls, path):

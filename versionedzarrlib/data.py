@@ -7,7 +7,7 @@ import numpy as np
 import zarr
 
 from .metadata import Metadata
-from .vc import VCS
+from kleio.utils.vc import VCS
 from kleio.utils.uid_rest import get_next_id
 
 

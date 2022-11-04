@@ -1,9 +1,10 @@
 from setuptools import find_packages, setup
+
 setup(
-    name='Versionedstoragelib',
+    name='kleio',
     packages=find_packages(),
     version='0.2.0',
-    description='Versioned storage',
+    description='KLEIO versioned Storage',
     author='Marwan Zouinkhi',
     license='MIT',
     install_requires=[],

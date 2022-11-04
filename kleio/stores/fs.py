@@ -25,24 +25,6 @@ def init_datastore(path, meta_type: KleioMetadata):
     meta_type().save_to_path(path)
 
 
-def init_store(store: DataStore, path: str, mode='r', **kwargs):
-    store._path = path
-    store._mode = mode
-
-    if isinstance(store, BlocksDataStore):
-        _meta_type = BlocksDataStoreMetadata
-    elif isinstance(store, IndexDataStore):
-        _meta_type = IndexesDataStoreMetadata
-    else:
-        raise KleioInvalidFileError(type(store))
-    if mode == 'r':
-        if not is_fs_datastore(path=path, meta_type=_meta_type):
-            raise KleioNotFoundError(path)
-    elif mode == 'w':
-        if not is_fs_datastore(path, meta_type=_meta_type):
-            init_datastore(path, meta_type=_meta_type)
-    else:
-        raise InvalidAccessModeError(mode)
 
 
 def create_dataset(store: DataStore,

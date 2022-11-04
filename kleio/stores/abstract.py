@@ -33,7 +33,7 @@ class DatasetAttributes:
 
 class DataStore:
     def create_dataset(self,
-                       name: str,
+                       dataset: str,
                        shape: [int],
                        dtype: np.dtype,
                        chunks: [int],
@@ -44,7 +44,6 @@ class DataStore:
 
     def get_dataset_attributes(self, dataset: str) -> DatasetAttributes:
         pass
-
 
 
 class BlocksDataStore(DataStore):
@@ -73,7 +72,7 @@ class IndexDataStore(DataStore):
         pass
 
     # -> IndexStore
-    def clone(self):
+    def clone(self, target_path: str):
         pass
 
     def push(self):
