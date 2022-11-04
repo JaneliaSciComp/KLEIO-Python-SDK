@@ -1,7 +1,7 @@
 import sys
 import zarr
 
-sys.path.append('../')
+sys.path.append('../../')
 
 from versionedzarrlib import VersionedDataStore
 

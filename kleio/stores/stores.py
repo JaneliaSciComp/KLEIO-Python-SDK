@@ -4,10 +4,10 @@ import numpy as np
 
 from kleio.stores import fs
 from kleio.stores.abstract import BlocksDataStore, IndexDataStore
-from kleio.stores.abstract import DataBlock, DatasetAttributes
-from kleio.utils.vc import VCS
+from kleio.stores.abstract import DataBlock
 from kleio.utils.exceptions import *
-from kleio.utils.meta import KleioMetadata, IndexesDataStoreMetadata, BlocksDataStoreMetadata
+from kleio.meta import IndexesDataStoreMetadata, BlocksDataStoreMetadata, DatasetMetadata
+from kleio.utils.vc import VCS
 
 
 # block_file_name = "0"
@@ -52,20 +52,42 @@ class FSBlocksDataStore(BlocksDataStore):
                        **kwargs):
         return fs.create_dataset(self, dataset, shape, dtype, chunks, compressor)
 
-    def get_dataset_attributes(self, dataset: str) -> DatasetAttributes:
+    def get_dataset_attributes(self, dataset: str) -> DatasetMetadata:
         return fs.get_dataset_attributes(self, dataset)
 
-    def read_block(self, version: int, dataset: str, grid_position: [int]) -> DataBlock:
+    def read_block(self, version: int, dataset: str, grid_position: [int]) ->  np.ndarray:
         block_path = os.path.join(self._path, dataset, version, format_grid_position(grid_position))
         return fs.read_block(self, block_path)
 
-    def write_block(self, block: DataBlock):
+    def write_block(self, version: int, block: DataBlock):
         block_path = os.path.join(self._path, block._dataset, str(block._block_version))
         print("Writing: " + block_path)
         fs.write_block(self, block_path, format_grid_position(block._grid_position), block)
 
 
+def get_grid_position(chunk, position):
+    grid = []
+    local_position = []
+    for c, p in zip(chunk, position):
+        g = int(position / chunk)
+        grid.append(g)
+        local_position.append(position - (g * c))
+    return grid, local_position
+
+
+def is_valid_position(shape, position):
+    for s, p in zip(shape, position):
+        if p >= s:
+            return False
+    return True
+
+
 class FSIndexDataStore(IndexDataStore):
+    _current_cache_block: object
+    _current_meta_cache: DatasetMetadata
+    _current_dataset_cache: str
+    _current_cache_grid: [int]
+
     def __init__(self,
                  path: str,
                  mode='r',
@@ -97,12 +119,17 @@ class FSIndexDataStore(IndexDataStore):
         self.vc.add_all()
         self.vc.commit("create " + dataset)
 
-    def get_dataset_attributes(self, dataset: str) -> DatasetAttributes:
-        return fs.get_dataset_attributes(self, dataset)
+    def get_dataset_attributes(self, dataset: str) -> DatasetMetadata:
+        self._current_dataset_cache = dataset
+        self._current_meta_cache = fs.get_dataset_attributes(self, dataset)
+        return self._current_meta_cache
 
-    def read_block(self, dataset: str, grid_position: [int]) -> DataBlock:
+    def read_block(self, dataset: str, grid_position: [int]) ->  np.ndarray:
+        self._current_cache_block = grid_position
         block_path = os.path.join(self._path, dataset, format_grid_position(grid_position))
-        return fs.read_block(self, block_path)
+        print("get block : "+block_path)
+        self._current_cache_block = fs.read_block(self, block_path)
+        return self._current_cache_block
 
     def write_block(self, block: DataBlock):
         block_path = os.path.join(self._path, block._dataset)
@@ -110,6 +137,9 @@ class FSIndexDataStore(IndexDataStore):
         fs.write_block(self, block_path, format_grid_position(block._grid_position), block)
 
     def commit(self):
+        self.vc.commit("commit")
+
+    def commit_all(self):
         self.vc.add_all()
         # TODO commit name
         self.vc.commit("commit")
@@ -123,3 +153,36 @@ class FSIndexDataStore(IndexDataStore):
 
     def checkout_branch(self, branch_name: str, create=False):
         self.vc.checkout_branch(branch_name, create)
+
+    def set_at(self, dataset, position, version):
+        meta = self._get_cached_meta(dataset)
+        if not is_valid_position(meta._dimension, position):
+            raise IndexOutOfBox("dimension: {} position: {} ".format(str(meta._dimension), str(position)))
+
+        grid_position, local_position = get_grid_position(meta._chunk, position)
+
+        # block = self._get_cached_block(dataset, grid_position)
+        # block.
+        #
+        # super().set_at(dataset, _grid_position, version)
+
+    def get_at(self, dataset, position):
+        meta = self._get_cached_meta(dataset)
+        grid_position, local_position = get_grid_position(meta._chunk, position)
+        block = self._get_cached_block(dataset, grid_position)
+        super().get_at(grid_position)
+
+    def _get_cached_block(self, dataset, grid_position):
+        if self._current_cache_block is None:
+            return self.read_block(dataset, grid_position)
+        if self._current_dataset_cache == dataset:
+            if self._current_cache_grid == grid_position:
+                return self._current_cache_block
+        return self.read_block(dataset, grid_position)
+
+    def _get_cached_meta(self, dataset):
+        if self._current_meta_cache is None:
+            return self.get_dataset_attributes(dataset)
+        if dataset == self._current_dataset_cache:
+            return self._current_meta_cache
+        return self.get_dataset_attributes(dataset)

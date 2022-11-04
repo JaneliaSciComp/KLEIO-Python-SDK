@@ -1,4 +1,4 @@
-from kleio import KleioMetadata
+from kleio.meta import KleioMetadata
 tmp_file = '/Users/zouinkhim/Desktop/tmp/tmp.json'
 # f = KleioMetadata()
 # f.save(tmp_file)

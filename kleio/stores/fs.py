@@ -1,12 +1,13 @@
 import os
+
 import numpy as np
 
-from kleio.stores.abstract import DataStore, BlocksDataStore, IndexDataStore
-from kleio.stores.abstract import DataBlock, DatasetAttributes
+from kleio.stores.abstract import DataBlock
+from kleio.stores.abstract import DataStore
 from kleio.utils.exceptions import *
-from kleio.utils.meta import DatasetMetadata, BlocksDataStoreMetadata, IndexesDataStoreMetadata
+from kleio.meta import DatasetMetadata
+from kleio.meta import KleioMetadata
 from kleio.utils.util import read_file, write_file
-from kleio.utils.meta import KleioMetadata
 
 
 def is_fs_datastore(path, meta_type: KleioMetadata):
@@ -23,8 +24,6 @@ def init_datastore(path, meta_type: KleioMetadata):
         raise KleioInvalidFileError(path)
     os.mkdir(path)
     meta_type().save_to_path(path)
-
-
 
 
 def create_dataset(store: DataStore,
@@ -44,16 +43,14 @@ def create_dataset(store: DataStore,
     DatasetMetadata(chunks, shape, chunks, dtype).save_to_path(dataset_path)
 
 
-def get_dataset_attributes(store: DataStore, dataset: str) -> DatasetAttributes:
+def get_dataset_attributes(store: DataStore, dataset: str) -> DatasetMetadata:
     dataset_path = os.path.join(store._path, dataset)
-    meta = DatasetMetadata.read_from_path(dataset_path)
-    print(meta)
-    # TODO return DatasetAttributes
-    return None
+    return DatasetMetadata.read_from_path(dataset_path)
 
 
-def read_block(store: DataStore, full_block_path: str) -> DataBlock:
+def read_block(store: DataStore, full_block_path: str) -> np.ndarray:
     if not os.path.exists(full_block_path):
+        print("Not found block :"+full_block_path)
         # TODO return empty block
         return None
     return read_raw_block(full_block_path)

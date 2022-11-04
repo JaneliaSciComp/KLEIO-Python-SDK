@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-sys.path.append('../')
+sys.path.append('../../')
 
 root_path = "/Users/zouinkhim/Desktop/tmp/versioned_data"
 
