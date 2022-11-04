@@ -69,9 +69,18 @@ class SerializableMetadata:
 
 class KleioMetadata(SerializableMetadata):
     _kleio_version = __version__
+    _set = "none"
 
 
-class BlocksMetadata(SerializableMetadata):
+class BlocksDataStoreMetadata(KleioMetadata):
+    _set = "blocks"
+
+
+class IndexesDataStoreMetadata(KleioMetadata):
+    _set = "indexes"
+
+
+class DatasetMetadata(SerializableMetadata):
     _compression: str
     _dimension: [int]
     _chunk: [int]
@@ -84,6 +93,3 @@ class BlocksMetadata(SerializableMetadata):
         self._chunk = chunk
         self._dtype = dtype
 
-
-class IndexesMetadata(BlocksMetadata):
-    pass

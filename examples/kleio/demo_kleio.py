@@ -1,6 +1,6 @@
 import kleio
 
-from kleio.stores.fs import FSDataStore, FSIndexStore
+from kleio.stores.fs_stores import FSDataStore, FSIndexStore
 
 index = FSIndexStore('path')
 blocks = FSDataStore('path')

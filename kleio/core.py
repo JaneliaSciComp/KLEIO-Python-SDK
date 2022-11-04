@@ -1,4 +1,4 @@
-from .stores.abstract import IndexStore, DataStore
+from kleio.stores.abstract import IndexDataStore, BlocksDataStore
 
 
 class Kleio:
@@ -6,7 +6,7 @@ class Kleio:
         pass
 
 
-def open(index_store: IndexStore, data_store: DataStore, mode='r', **kwargs):
+def open(index_store: IndexDataStore, data_store: BlocksDataStore, mode='r', **kwargs):
     if mode == 'r':
         open_reader(index_store, data_store, **kwargs)
     elif mode == 'w':
@@ -14,12 +14,12 @@ def open(index_store: IndexStore, data_store: DataStore, mode='r', **kwargs):
     pass
 
 
-def open_reader(index_store: IndexStore, data_store: DataStore, **kwargs):
+def open_reader(index_store: IndexDataStore, data_store: BlocksDataStore, **kwargs):
     pass
 
 
-def open_writer(index_store: IndexStore,
-                data_store: DataStore,
+def open_writer(index_store: IndexDataStore,
+                data_store: BlocksDataStore,
                 kleio_version=None,
                 **kwargs):
     pass
