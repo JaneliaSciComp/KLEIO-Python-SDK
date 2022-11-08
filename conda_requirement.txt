@@ -7,3 +7,4 @@ paramiko # used for SSH access
 scp  # used to copy main repo to remote
 deprecation # for annotation deprecated methods
 requests # for the API ID
+fsspec # FS specs for N5

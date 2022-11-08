@@ -1,28 +1,30 @@
 # import dask.array as da
 from typing import Any
 
-# from zarr.storage import NestedDirectoryStore
+from zarr.storage import NestedDirectoryStore
 from zarr.n5 import N5FSStore, is_chunk_key
 import numpy as np
+from kleio.utils.uid_rest import get_next_id
 
 
 # from .metadata import Metadata
 
 # TODO create dataset
-class ZarrIndexStore:
+class ZarrIndexStore(NestedDirectoryStore):
     # TODO
     def get_version_for(self, key):
+        print("Get version for: " + key)
         return 0
 
     def set_version_id(self, version, key):
         pass
 
 
-def normalize_versioned_chunk_key(key, version):
+def normalize_versioned_chunk_key(key, version) -> str:
     pass
 
 
-class N5VersionedStore(N5FSStore):
+class VersionedFSStore(N5FSStore):
     _current_version_id: np.uint64
 
     def __init__(self, index_store: ZarrIndexStore, *args, **kwargs):
@@ -30,6 +32,7 @@ class N5VersionedStore(N5FSStore):
         self.index_store = index_store
 
     def __getitem__(self, key: str) -> bytes:
+        print("get :"+key)
         if is_chunk_key(key):
             version = self.index_store.get_version_for(key)
             if version > 0:
@@ -37,15 +40,22 @@ class N5VersionedStore(N5FSStore):
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any):
+        print("set :"+key)
         if is_chunk_key(key):
             version = self._get_current_version_id()
             self.index_store.set_version_id(version, key)
             key = normalize_versioned_chunk_key(key, version)
+        else:
+            self.index_store.__setitem__(key,value)
         super().__setitem__(key, value)
 
-    # TODO
     def _get_current_version_id(self):
-        pass
+        if self._current_version is None:
+            self._increment_version()
+        return self._get_current_version_id()
+
+    def _increment_version(self):
+        self._current_version = get_next_id()
 
 # class VersionedDataStore(NestedDirectoryStore):
 #     DEFAULT_INDEX_CHUNK_SIZE = 64
