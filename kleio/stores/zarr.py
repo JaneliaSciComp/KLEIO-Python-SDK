@@ -5,7 +5,7 @@ from zarr.storage import NestedDirectoryStore
 from zarr.n5 import N5FSStore, is_chunk_key
 import numpy as np
 from kleio.utils.uid_rest import get_next_id
-
+from kleio.utils.exceptions import InvalidAccessModeError
 
 # from .metadata import Metadata
 
@@ -13,40 +13,80 @@ from kleio.utils.uid_rest import get_next_id
 class ZarrIndexStore(NestedDirectoryStore):
     # TODO
     def get_version_for(self, key):
-        print("Get version for: " + key)
-        return 0
+        return 10
 
     def set_version_id(self, version, key):
         pass
 
 
 def normalize_versioned_chunk_key(key, version) -> str:
-    pass
+    segments = list(key.split('/'))
+    first_part = segments[:-1]
+    if isinstance(first_part, str):
+        first_part = [first_part]
+    last_part = [segments[-1]]
+    formatted_version = [str(version)]
+    if segments:
+        segments = first_part + formatted_version + last_part
+        key = '/'.join(segments)
+        return key
 
 
 class VersionedFSStore(N5FSStore):
     _current_version_id: np.uint64
 
+    # Arrays check is this method exist, if not arrrays load the chunk blocks implemented to append the version ID to
+    # the path of the block dataset/VERSION/chunk_id
+    # NB: add the version to the key should be done before normalizing
+    # the key dataset/0.0 -> dataset/VERSION/0.0 won't work if block id is 0/0
+    # z[dataset][:] will call this instead of __getitem__
+
+    def getitems(self, keys, **kwargs):
+        print("get items:")
+        print(keys)
+        keys_transformed = [self._normalize_key(key) for key in
+                            [normalize_versioned_chunk_key(k, self.index_store.get_version_for(k)) for k in
+                             keys]]
+        print(keys_transformed)
+        results = self.map.getitems(keys_transformed, on_error="omit")
+        # The function calling this method may not recognize the transformed keys
+        # So we send the values returned by self.map.getitems back into the original key space.
+        return {keys[keys_transformed.index(rk)]: rv for rk, rv in results.items()}
+
+    def setitems(self, values):
+        print("set items")
+        if self.mode == 'r':
+            raise InvalidAccessModeError(self.mode)
+        values = {normalize_versioned_chunk_key(key, self.index_store.get_version_for(key)): val for key, val in values.items()}
+        values = {self._normalize_key(key): val for key, val in values.items()}
+        print("values")
+        self.map.setitems(values)
+
     def __init__(self, index_store: ZarrIndexStore, *args, **kwargs):
+        print("init")
         super().__init__(*args, **kwargs)
         self.index_store = index_store
 
     def __getitem__(self, key: str) -> bytes:
-        print("get :"+key)
+        print("get :" + key)
         if is_chunk_key(key):
+            print("getting block")
             version = self.index_store.get_version_for(key)
             if version > 0:
                 key = normalize_versioned_chunk_key(key, version)
+                print("key :" + key)
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any):
-        print("set :"+key)
+        print("set :" + key)
+        print(value)
         if is_chunk_key(key):
             version = self._get_current_version_id()
             self.index_store.set_version_id(version, key)
             key = normalize_versioned_chunk_key(key, version)
+            print("key :" + key)
         else:
-            self.index_store.__setitem__(key,value)
+            self.index_store.__setitem__(key, value)
         super().__setitem__(key, value)
 
     def _get_current_version_id(self):
