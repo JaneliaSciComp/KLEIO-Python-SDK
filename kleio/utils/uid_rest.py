@@ -9,7 +9,6 @@ def get_next_id() -> np.uint64:
     try:
         response = requests.post(config.UNIQUE_ID_API_URL, timeout=(2, 2))
         j_string = response.json()
-        print(f" Session ID: {j_string['id']}")
         st_value = j_string['id']
         session = np.uint64(st_value)
         return session

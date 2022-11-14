@@ -6,20 +6,17 @@ compressor = Zstd(level=1)
 #
 # zarr.open_array()
 
-path = '/Users/zouinkhim/Desktop/tmp/demo_versioned'
-path_index = '/Users/zouinkhim/Desktop/tmp/demo_versioned_index'
+path = '/Users/zouinkhim/Desktop/tmp/data_demo_versioned'
+path_index = '/Users/zouinkhim/Desktop/tmp/index_demo_versioned'
 index_store = ZarrIndexStore(path_index)
 store = VersionedFSStore(index_store, path, auto_mkdir=True)
 
 z = zarr.open(store, mode="a")
 dummy_data = np.ones((10,10), dtype='i8')
-print("create dataset")
 z.create_dataset("test", shape=(10, 10), chunks=(5, 5), compressor=compressor)
-# print(z["test"][:])
-print("read dataset")
 x = z["test"]
 all = x[:]
-print(type(z["test"]))
+print("type: {}: ".format(type(z["test"])))
 print(type(z["test"][:]))
 print("set dataset")
 z["test"][:] = dummy_data
