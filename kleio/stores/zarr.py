@@ -1,22 +1,65 @@
 # import dask.array as da
 from typing import Any
 
-from zarr.storage import NestedDirectoryStore
+from zarr.storage import NestedDirectoryStore, array_meta_key
 from zarr.n5 import N5FSStore, is_chunk_key
 import numpy as np
 from kleio.utils.uid_rest import get_next_id
 from kleio.utils.exceptions import InvalidAccessModeError
+from zarr.meta import decode_array_metadata, encode_array_metadata
+from kleio.utils import util
 
 # from .metadata import Metadata
+index_default_dtype = "i8"
+index_default_chunk = 64
+
 
 # TODO create dataset
 class ZarrIndexStore(NestedDirectoryStore):
+
+    # TODO compression
+    def __init__(self, path, normalize_keys=False, dimension_separator="/", compression="default", dtype="i8",
+                 chunk=64):
+        super().__init__(path, normalize_keys, dimension_separator)
+        self.chunk = chunk
+        self.dtype = dtype
+
     # TODO
     def get_version_for(self, key):
+        print("get version for: {}".format(key))
         return 10
 
     def set_version_id(self, version, key):
+        print("set version id: {} to {}".format(version, key))
         pass
+
+    def set_version_items(self, values, version):
+        print("set version: {} to {}".format(version, values))
+        pass
+
+    def create_dataset_for(self, key, value):
+        print("create index dataset: {}  \n v: {}".format(key, value))
+        index_values = self.__format_index_matrix(value)
+        self.__setitem__(key, index_values)
+
+    # TODO look for the perfect chunk size
+    def __format_index_matrix(self, value):
+        print(type(value))
+        print("format index value: {}".format(value))
+        value = decode_array_metadata(value)
+        print(" value: {}".format(value))
+        array_chunks = value["chunks"]
+        print(len(value["chunks"]))
+        index_chunks = [self.chunk] * len(array_chunks)
+        dims = util.get_nb_chunks(array_chunks, index_chunks)
+
+        value["chunks"] = tuple(index_chunks)
+        # value["dtype"] = self.dtype
+        print("old shape {}".format(value["shape"]))
+        value["shape"] = tuple(dims)
+
+        result = encode_array_metadata(value)
+        return result
 
 
 def normalize_versioned_chunk_key(key, version) -> str:
@@ -33,69 +76,71 @@ def normalize_versioned_chunk_key(key, version) -> str:
 
 
 class VersionedFSStore(N5FSStore):
-    _current_version_id: np.uint64
 
-    # Arrays check is this method exist, if not arrrays load the chunk blocks implemented to append the version ID to
+    # Arrays check is this method exist, if not, arrays load the chunk blocks implemented to append the version ID to
     # the path of the block dataset/VERSION/chunk_id
     # NB: add the version to the key should be done before normalizing
     # the key dataset/0.0 -> dataset/VERSION/0.0 won't work if block id is 0/0
     # z[dataset][:] will call this instead of __getitem__
 
     def getitems(self, keys, **kwargs):
-        print("get items:")
-        print(keys)
+        print("get items {} {}".format(keys, kwargs))
         keys_transformed = [self._normalize_key(key) for key in
                             [normalize_versioned_chunk_key(k, self.index_store.get_version_for(k)) for k in
                              keys]]
-        print(keys_transformed)
         results = self.map.getitems(keys_transformed, on_error="omit")
         # The function calling this method may not recognize the transformed keys
         # So we send the values returned by self.map.getitems back into the original key space.
         return {keys[keys_transformed.index(rk)]: rv for rk, rv in results.items()}
 
     def setitems(self, values):
-        print("set items")
+        print("set: {}".format(values))
         if self.mode == 'r':
             raise InvalidAccessModeError(self.mode)
-        values = {normalize_versioned_chunk_key(key, self.index_store.get_version_for(key)): val for key, val in values.items()}
+        version = self._get_current_version_id()
+        self.index_store.set_version_items(list(values.keys()), version)
+        values = {normalize_versioned_chunk_key(key, version): val for key, val in
+                  values.items()}
         values = {self._normalize_key(key): val for key, val in values.items()}
-        print("values")
+
+        print("set formatted: {}".format(values))
         self.map.setitems(values)
 
     def __init__(self, index_store: ZarrIndexStore, *args, **kwargs):
-        print("init")
         super().__init__(*args, **kwargs)
         self.index_store = index_store
+        self._current_version: np.uint64 = None
 
     def __getitem__(self, key: str) -> bytes:
-        print("get :" + key)
+        print("get item : {} ".format(key))
         if is_chunk_key(key):
-            print("getting block")
             version = self.index_store.get_version_for(key)
             if version > 0:
                 key = normalize_versioned_chunk_key(key, version)
-                print("key :" + key)
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any):
-        print("set :" + key)
-        print(value)
+        print("set item : {} -> {}".format(key, value))
         if is_chunk_key(key):
             version = self._get_current_version_id()
             self.index_store.set_version_id(version, key)
             key = normalize_versioned_chunk_key(key, version)
-            print("key :" + key)
+        #     TODO
+        # in case of a dataset we need to format the dimensions for the index matrix
+        elif key.endswith(array_meta_key):
+            self.index_store.create_dataset_for(key, value)
         else:
             self.index_store.__setitem__(key, value)
         super().__setitem__(key, value)
 
     def _get_current_version_id(self):
         if self._current_version is None:
-            self._increment_version()
-        return self._get_current_version_id()
+            return self._increment_version()
 
     def _increment_version(self):
         self._current_version = get_next_id()
+        print("version incremented : {}".format(self._current_version))
+        return self._current_version
 
 # class VersionedDataStore(NestedDirectoryStore):
 #     DEFAULT_INDEX_CHUNK_SIZE = 64

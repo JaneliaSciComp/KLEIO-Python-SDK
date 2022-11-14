@@ -2,14 +2,16 @@ import numpy as np
 import requests
 from kleio import config
 
+from requests.exceptions import ConnectTimeout
+
 
 def get_next_id() -> np.uint64:
     try:
-        response = requests.post(config.UNIQUE_ID_API_URL)
+        response = requests.post(config.UNIQUE_ID_API_URL, timeout=(2, 2))
         j_string = response.json()
-        print(f" Session ID: {j_string}")
-        session = np.uint64(j_string)
+        print(f" Session ID: {j_string['id']}")
+        st_value = j_string['id']
+        session = np.uint64(st_value)
         return session
-    except Exception as err:
-        print(f"ERROR: Can't get session id {err}")
-        raise
+    except ConnectTimeout as err:
+        raise "ERROR: Can't get session id from server {}".format(err)

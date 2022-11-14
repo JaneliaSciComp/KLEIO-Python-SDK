@@ -13,13 +13,17 @@ store = VersionedFSStore(index_store, path, auto_mkdir=True)
 
 z = zarr.open(store, mode="a")
 dummy_data = np.ones((10,10), dtype='i8')
+print("create dataset")
 z.create_dataset("test", shape=(10, 10), chunks=(5, 5), compressor=compressor)
 # print(z["test"][:])
+print("read dataset")
 x = z["test"]
 all = x[:]
 print(type(z["test"]))
 print(type(z["test"][:]))
+print("set dataset")
 z["test"][:] = dummy_data
+print("read dataset")
 print(z["test"][:])
 # z["test"][9, 0] = 20
 # print(z["test"][0,0])
