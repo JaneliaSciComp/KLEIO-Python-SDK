@@ -16,10 +16,6 @@ index_default_chunk = 64
 index_default_compressor = Zlib()
 
 
-# TODO Problem:
-# read index infos
-
-# TODO create dataset
 class ZarrIndexStore(NestedDirectoryStore):
 
     # TODO compression
