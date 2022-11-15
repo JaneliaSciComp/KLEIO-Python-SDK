@@ -1,4 +1,18 @@
-# Versioned Multi dimension storage
+### Versioned Storage Python SDK 
+| [JAVA SDK IS HERE](https://github.com/JaneliaSciComp/VersionedN5)
+
+
+----
+#### Proposed solution:
+To enable version management for nd data, a mix is created of:
+- Version block index using [Zarr](https://zarr.readthedocs.io/en/stable/) + [Git](https://git-scm.com/)
+- A key value store: using [N5](https://github.com/saalfeldlab/n5) for now
+
+
+![solution](img/architecture.jpeg "Proposed solution")
+
+
+
 
 ### Features:
 - Multiple branches
