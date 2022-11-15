@@ -11,7 +11,6 @@ from zarr.meta import decode_array_metadata, encode_array_metadata, decode_dtype
 from kleio.utils import util
 from zarr.codecs import Zlib
 
-# from zarr.core import Array
 index_default_dtype = "i8"
 index_default_chunk = 64
 index_default_compressor = Zlib()
@@ -129,9 +128,7 @@ class VersionedFSStore(N5FSStore):
         return super().__getitem__(key)
 
     def __setitem__(self, key: str, value: Any):
-        print("set item: {} -> ".format(key, value))
         if is_chunk_key(key):
-            print("set chunk : {} -> {}".format(key, value))
             version = self.current_version
             self.__set_index_version_id(version, key)
             key = normalize_versioned_chunk_key(key, version)
@@ -143,20 +140,30 @@ class VersionedFSStore(N5FSStore):
 
     def _increment_version(self):
         self.__current_version = get_next_id()
-        print("version incremented : {}".format(self.current_version))
         return self.current_version
 
     def _get_version_for(self, key):
         dataset, position = util.decode_key_into_dataset_position(key)
         return self._index_reader[dataset][position]
 
-    # TODO fix parallel
     def __set_index_version_items(self, keys, version):
         print("set version index items: {} ".format(keys))
-        # BasicIndexer()
+        to_be_updated = {}
         for key in keys:
             dataset, position = util.decode_key_into_dataset_position(key)
-            self._index_reader[dataset][position] = version
+            if dataset in to_be_updated.keys():
+                points = to_be_updated[dataset]
+                points.append(position)
+                to_be_updated[dataset] = points
+            else:
+                to_be_updated[dataset] = [position]
+        for dataset in to_be_updated.keys():
+            points = to_be_updated[dataset]
+            if len(points) == 1:
+                points = points[0]
+            else:
+                points = tuple(np.array(points).transpose().tolist())
+            self._index_reader[dataset][points] = version
         pass
 
     def __set_index_version_id(self, version, key):
