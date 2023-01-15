@@ -1,16 +1,20 @@
 import sys
+
 sys.path.append('../../')
 from getpass import getpass
-from versionedzarrlib import VersionedSession, RemoteClient, VersionedData
+from versionedzarrlib import VersionedSession, RemoteClient, LocalVersionedData
 
 path = "/Users/zouinkhim/Desktop/versioned_data"
 
-session = VersionedSession(VersionedData.open(path),
+session = VersionedSession(LocalVersionedData.open(path),
                            RemoteClient("", getpass(prompt='Janelia username: '),
                                         getpass()))
-session.data._update_index(session._id, (0, 0, 0))
-session.data._indexes_ds.vc.add_all()
-session.data._indexes_ds.vc.commit("test")
+session[0, 0, 0] = data
+# __setitem
+# update index / write chunk
+#  don't reference to any property when you can the object
+session.add_all()
+session.commit("test")
 #  push raw data
 
 session.push()

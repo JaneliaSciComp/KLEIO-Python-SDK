@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import zarr
 
-sys.path.append('../')
+sys.path.append('../../')
 
 from versionedzarrlib import VersionedDataStore
 
