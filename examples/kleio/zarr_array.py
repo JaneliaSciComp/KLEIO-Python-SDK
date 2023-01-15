@@ -28,9 +28,10 @@ x = z["test"]
 # print(type(z["test"][:]))
 print("set dataset")
 # x[:] = dummy_data
-# x[(7, 8), (2, 6), (8, 6)] = 5
-x[7, 8] = 8
-x[6, 8] = 5
+x[[0, 0, 0], [0, 2, 3]] = 5
+
+x[0:6, 2:8] = 8
+# x[6, 8] = 5
 print("read dataset")
 print(z["test"][:])
 # z["test"][9, 0] = 20

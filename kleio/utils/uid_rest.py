@@ -6,6 +6,8 @@ from requests.exceptions import ConnectTimeout
 
 
 def get_next_id() -> np.uint64:
+    if config.TEST:
+        return config.get_test_value()
     try:
         response = requests.post(config.UNIQUE_ID_API_URL, timeout=(2, 2))
         j_string = response.json()

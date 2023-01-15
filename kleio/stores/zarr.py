@@ -10,10 +10,15 @@ from kleio.utils.exceptions import InvalidAccessModeError
 from zarr.meta import decode_array_metadata, encode_array_metadata, decode_dtype
 from kleio.utils import util
 from zarr.codecs import Zlib
+from kleio.utils.vc import VCS
 
 index_default_dtype = "i8"
 index_default_chunk = 64
 index_default_compressor = Zlib()
+
+
+def get_dataset_name(key, dimension_separator="/"):
+    return dimension_separator.join(key.split(dimension_separator)[:-1])
 
 
 class ZarrIndexStore(NestedDirectoryStore):
@@ -26,22 +31,40 @@ class ZarrIndexStore(NestedDirectoryStore):
                  compressor=index_default_compressor,
                  filters=None,
                  dtype="i8",
-                 chunk=64):
+                 chunk=1):
         super().__init__(path, normalize_keys, dimension_separator)
         self._chunk = chunk
         self._dtype = dtype
         self._compressor = compressor
         self._filters = filters
+        self._vc = VCS(path)
+
+    @property
+    def vc(self):
+        return self._vc
 
     def create_dataset_for(self, key, value):
         index_values = self.__format_index_metadata(value)
         self.__setitem__(key, index_values)
+        dataset_name = get_dataset_name(key, self._dimension_separator)
+        # self.vc.commit("create dataset: {}".format(dataset_name))
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        if not self._vc.is_git_repo():
+            self._vc.init_repo()
+        # if len(self._vc.untracked_files()) > 0:
+        #     self._vc.commit_all()
+
+    # def setitems(self, values):
+    #     print("set items: {}".format(values))
 
     # TODO look for the perfect chunk size
     def __format_index_metadata(self, value):
         value = decode_array_metadata(value)
         array_chunks = value["chunks"]
         array_shape = value["shape"]
+        # TODO Fix this with min size
         index_chunks = [self._chunk] * len(array_chunks)
         dims = util.get_nb_chunks(array_shape, array_chunks)
         value["chunks"] = tuple(index_chunks)
@@ -74,13 +97,17 @@ class VersionedFSStore(N5FSStore):
         # self.index_store = Array(index_store)
         self._index_store = index_store
         self.__current_version: np.uint64 = None
-        self.__index_reader = None
+        self.__index_array = None
 
     @property
-    def _index_reader(self):
-        if self.__index_reader is None:
-            self.__index_reader = zarr.open(self._index_store, mode="a")
-        return self.__index_reader
+    def vc(self):
+        return self._index_store.vc
+
+    @property
+    def _index_array(self):
+        if self.__index_array is None:
+            self.__index_array = zarr.open(self._index_store, mode="a")
+        return self.__index_array
 
     @property
     def current_version(self):
@@ -130,6 +157,7 @@ class VersionedFSStore(N5FSStore):
             key = normalize_versioned_chunk_key(key, version)
         elif key.endswith(array_meta_key):
             self._index_store.create_dataset_for(key, value)
+            # self._index_store.vc.commit_all("create :{}".format(key))
         else:
             self._index_store.__setitem__(key, value)
         super().__setitem__(key, value)
@@ -140,29 +168,32 @@ class VersionedFSStore(N5FSStore):
 
     def _get_version_for(self, key):
         dataset, position = util.decode_key_into_dataset_position(key)
-        return self._index_reader[dataset][position]
+        return self._index_array[dataset][position]
 
     def __set_index_version_items(self, keys, version):
         print("set version index items: {} ".format(keys))
         to_be_updated = {}
         for key in keys:
             dataset, position = util.decode_key_into_dataset_position(key)
+            # to_be_updated.update(dataset, to_be_updated.get(dataset, []).append(position))
+            # to_be_updated[dataset] = tmp
             if dataset in to_be_updated.keys():
-                points = to_be_updated[dataset]
-                points.append(position)
-                to_be_updated[dataset] = points
+                to_be_updated[dataset].append(position)
             else:
                 to_be_updated[dataset] = [position]
+
         for dataset in to_be_updated.keys():
             points = to_be_updated[dataset]
             if len(points) == 1:
                 points = points[0]
             else:
                 points = tuple(np.array(points).transpose().tolist())
-            self._index_reader[dataset][points] = version
+            # TODO use map set items for faster writing
+            self._index_array[dataset][points] = version
+            # self._index_store.vc.c
         pass
 
     def __set_index_version_id(self, version, key):
         dataset, position = util.decode_key_into_dataset_position(key)
 
-        self._index_reader[dataset][position] = version
+        self._index_array[dataset][position] = version

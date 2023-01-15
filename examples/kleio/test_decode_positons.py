@@ -11,10 +11,12 @@ def decode_key_into_dataset_position(key: str, dataset_separator="/", dimension_
     return result_dataset, tuple(grid_position)
 
 
-keys = ["test/hello/c1/5.1", "test/hello/c1/1.10", "test/hello/c1/1.12", "test/hello/c2/1.1", "test/hello/c3/1.1",
+keys = ["test/hello/c1/5.3", "test/hello/c1/1.10", "test/hello/c1/1.12", "test/hello/c2/1.1", "test/hello/c3/1.1",
         "test/hello/c1/1.13", "test/hello/c1/1.51", "test/hello/c2/11.1"]
 to_be_updated = {}
-
+print(keys)
+dataset = "test/hello/c1"
+position = (5, 1, 3)
 for key in keys:
     dataset, position = decode_key_into_dataset_position(key)
     if dataset in to_be_updated.keys():
@@ -28,7 +30,7 @@ print(to_be_updated)
 
 for dataset in to_be_updated.keys():
     points = to_be_updated[dataset]
-    if len(points) == 1 :
+    if len(points) == 1:
         points = points[0]
     else:
         points = tuple(np.array(points).transpose().tolist())

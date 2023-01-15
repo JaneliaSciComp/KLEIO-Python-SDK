@@ -3,7 +3,6 @@ import time
 
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError
 
-# from versionedzarrlib.ssh import RemoteClient
 from kleio.utils.exceptions import InvalidCompressionIndexError
 
 
@@ -24,13 +23,23 @@ class VCS(object):
             raise InvalidCompressionIndexError(compression)
         self._path = path
         self._compression = compression
+        self._repo = None
+
+    @property
+    def repo(self):
+        if self._repo is None:
+            self._repo = Repo(self._path)
+        return self._repo
 
     def is_git_repo(self):
         try:
-            _ = Repo(self._path).git_dir
+            _ = self.repo.git_dir
             return True
         except InvalidGitRepositoryError:
             return False
+
+    def untracked_files(self):
+        return self.repo.untracked_files
 
     def init_repo(self):
         """Initialize a vcs repository at the given path if specified
@@ -55,8 +64,7 @@ class VCS(object):
 
     def add_all(self):
         """stage all local changes to git index"""
-        repo = Repo(self._path)
-        repo.git.add(all=True)
+        self.repo.git.add(all=True)
 
     def add(self, files: [str]):
         """add files to git index
@@ -65,14 +73,21 @@ class VCS(object):
 
                 VCS("/Users/zouinkhim/dataset").add(["test/file.txt"]).
                 """
-        repo = Repo(self._path)
-        repo.index.add(files)
+        self.repo.index.add(files)
 
     def commit(self, message: str):
         """commit staged changes , need add() before
         :param message: commit message. """
-        repo = Repo(self._path)
-        repo.index.commit(message)
+        self.repo.index.commit(message)
+
+    def commit_all(self, message: str = None):
+        """commit staged changes , need add() before
+        :param message: commit message. """
+        if message is None:
+            files = self.untracked_files()
+            message = "-".join(files)
+        self.repo.git.add(all=True)
+        self.repo.index.commit(message)
 
     def show_history(self):
         """ Show git history """
