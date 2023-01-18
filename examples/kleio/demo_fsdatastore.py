@@ -1,7 +1,7 @@
 import numpy as np
 
 from kleio import DataBlock
-from kleio.stores.stores import FSBlocksDataStore
+from src.kleio.stores.stores import FSBlocksDataStore
 
 path = '/Users/zouinkhim/Desktop/tmp/data_store'
 blocks_store = FSBlocksDataStore(path=path, mode='w')

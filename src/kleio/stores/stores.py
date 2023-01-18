@@ -5,9 +5,8 @@ import numpy as np
 from kleio.stores import fs
 from kleio.stores.abstract import BlocksDataStore, IndexDataStore
 from kleio.stores.abstract import DataBlock
-from kleio.utils.exceptions import *
-from kleio.meta import IndexesDataStoreMetadata, BlocksDataStoreMetadata, DatasetMetadata
-from kleio.utils.vc import VCS
+from src.kleio.meta import IndexesDataStoreMetadata, BlocksDataStoreMetadata, DatasetMetadata
+from src.kleio.utils.vc import VCS
 
 
 # block_file_name = "0"

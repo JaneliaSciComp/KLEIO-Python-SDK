@@ -4,10 +4,9 @@ import numpy as np
 
 from kleio.stores.abstract import DataBlock
 from kleio.stores.abstract import DataStore
-from kleio.utils.exceptions import *
-from kleio.meta import DatasetMetadata
-from kleio.meta import KleioMetadata
-from kleio.utils.util import read_file, write_file
+from src.kleio.meta import DatasetMetadata
+from src.kleio.meta import KleioMetadata
+from src.kleio.utils.util import read_file, write_file
 
 
 def is_fs_datastore(path, meta_type: KleioMetadata):

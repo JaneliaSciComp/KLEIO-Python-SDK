@@ -5,12 +5,12 @@ import zarr
 from zarr.storage import NestedDirectoryStore, array_meta_key
 from zarr.n5 import N5FSStore, is_chunk_key
 import numpy as np
-from kleio.utils.uid_rest import get_next_id
-from kleio.utils.exceptions import InvalidAccessModeError
+from src.kleio.utils import get_next_id
+from src.kleio.utils import InvalidAccessModeError
 from zarr.meta import decode_array_metadata, encode_array_metadata, decode_dtype
-from kleio.utils import util
+from src.kleio.utils import util
 from zarr.codecs import Zlib
-from kleio.utils.vc import VCS
+from src.kleio.utils.vc import VCS
 
 index_default_dtype = "i8"
 index_default_chunk = 64
