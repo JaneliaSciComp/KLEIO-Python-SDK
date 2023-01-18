@@ -7,6 +7,7 @@ setup(
     description='KLEIO versioned Storage',
     author='Marwan Zouinkhi',
     license='MIT',
+    url="https://github.com/JaneliaSciComp/KLEIO-Python-SDK",
     install_requires=[
         'six>=1.16.0',
         'attrs>=21.4.0',
