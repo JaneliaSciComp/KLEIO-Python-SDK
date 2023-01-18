@@ -1,7 +1,7 @@
 import json
 import os
 
-from src.kleio.config import __version__
+from .config import __version__
 
 
 # By convention Field should be named " _NAME "

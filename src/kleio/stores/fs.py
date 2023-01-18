@@ -1,13 +1,11 @@
 import os
 
 import numpy as np
-
-from src.kleio.stores.abstract import DataBlock
-from src.kleio.stores.abstract import DataStore
-from src.kleio.meta import DatasetMetadata
-from src.kleio.meta import KleioMetadata
-from src.kleio.utils.util import read_file, write_file
-from src.kleio.utils.exceptions import KleioInvalidFileError, InvalidAccessPermissionError, AlreadyExistsError
+from .abstract import DataBlock
+from .abstract import DataStore
+from ..meta import DatasetMetadata, KleioMetadata
+from ..utils.util import read_file, write_file
+from ..utils.exceptions import KleioInvalidFileError, InvalidAccessPermissionError, AlreadyExistsError
 
 
 def is_fs_datastore(path, meta_type: KleioMetadata):

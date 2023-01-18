@@ -1,7 +1,7 @@
 import numpy as np
-from src.kleio.stores.abstract import IndexDataStore, BlocksDataStore, DataBlock
-from src.kleio.utils.uid_rest import get_next_id
-from src.kleio.meta import DatasetMetadata
+from .stores.abstract import IndexDataStore, BlocksDataStore, DataBlock
+from .utils.uid_rest import get_next_id
+from .meta import DatasetMetadata
 
 
 class Kleio(IndexDataStore):

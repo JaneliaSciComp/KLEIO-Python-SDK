@@ -1,13 +1,9 @@
-import os
-
-import numpy as np
-
-from src.kleio.stores import fs
-from src.kleio.stores.abstract import BlocksDataStore, IndexDataStore
-from src.kleio.stores.abstract import DataBlock
-from src.kleio.meta import IndexesDataStoreMetadata, BlocksDataStoreMetadata, DatasetMetadata
-from src.kleio.utils.exceptions import KleioNotFoundError, InvalidAccessModeError, IndexOutOfBoxError
-from src.kleio.utils.vc import VCS
+from .fs import *
+from .abstract import BlocksDataStore, IndexDataStore
+from .abstract import DataBlock
+from ..meta import IndexesDataStoreMetadata, BlocksDataStoreMetadata, DatasetMetadata
+from ..utils.exceptions import KleioNotFoundError, InvalidAccessModeError, IndexOutOfBoxError
+from ..utils.vc import VCS
 
 
 def format_grid_position(grid_position):
@@ -26,29 +22,29 @@ class FSBlocksDataStore(BlocksDataStore):
         _meta_type = BlocksDataStoreMetadata
 
         if mode == 'r':
-            if not fs.is_fs_datastore(path=path, meta_type=_meta_type):
+            if not is_fs_datastore(path=path, meta_type=_meta_type):
                 raise KleioNotFoundError(path)
         elif mode == 'w':
-            if not fs.is_fs_datastore(path, meta_type=_meta_type):
-                fs.init_datastore(path, meta_type=_meta_type)
+            if not is_fs_datastore(path, meta_type=_meta_type):
+                init_datastore(path, meta_type=_meta_type)
         else:
             raise InvalidAccessModeError(mode)
 
     def create_dataset(self, dataset: str, shape: [int], dtype: str, chunks: [int], compressor="default",
                        **kwargs):
-        return fs.create_dataset(self, dataset, shape, dtype, chunks, compressor)
+        return create_dataset(self, dataset, shape, dtype, chunks, compressor)
 
     def get_dataset_attributes(self, dataset: str) -> DatasetMetadata:
-        return fs.get_dataset_attributes(self, dataset)
+        return get_dataset_attributes(self, dataset)
 
     def read_block(self, version: int, dataset: str, grid_position: [int]) -> np.ndarray:
         block_path = os.path.join(self._path, dataset, version, format_grid_position(grid_position))
-        return fs.read_block(self, block_path)
+        return read_block(self, block_path)
 
     def write_block(self, version: int, block: DataBlock):
         block_path = os.path.join(self._path, block._dataset, str(block._block_version))
         print("Writing: " + block_path)
-        fs.write_block(self, block_path, format_grid_position(block._grid_position), block)
+        write_block(self, block_path, format_grid_position(block._grid_position), block)
 
 
 def get_grid_position(chunk, position):
@@ -84,13 +80,13 @@ class FSIndexDataStore(IndexDataStore):
 
         _meta_type = IndexesDataStoreMetadata
         if mode == 'r':
-            if not fs.is_fs_datastore(path=path, meta_type=_meta_type):
+            if not is_fs_datastore(path=path, meta_type=_meta_type):
                 raise KleioNotFoundError(path)
             if not self.vc.is_git_repo():
                 raise KleioNotFoundError(" (Version error!) " + path)
         elif mode == 'w':
-            if not fs.is_fs_datastore(path, meta_type=_meta_type):
-                fs.init_datastore(path, meta_type=_meta_type)
+            if not is_fs_datastore(path, meta_type=_meta_type):
+                init_datastore(path, meta_type=_meta_type)
                 self.vc.init_repo()
                 self.vc.add_all()
                 self.vc.commit("init")
@@ -101,26 +97,26 @@ class FSIndexDataStore(IndexDataStore):
 
     def create_dataset(self, dataset: str, shape: [int], dtype: np.dtype, chunks: [int], compressor="default",
                        **kwargs):
-        fs.create_dataset(self, dataset, shape, dtype, chunks, compressor)
+        create_dataset(self, dataset, shape, dtype, chunks, compressor)
         self.vc.add_all()
         self.vc.commit("create " + dataset)
 
     def get_dataset_attributes(self, dataset: str) -> DatasetMetadata:
         self._current_dataset_cache = dataset
-        self._current_meta_cache = fs.get_dataset_attributes(self, dataset)
+        self._current_meta_cache = get_dataset_attributes(self, dataset)
         return self._current_meta_cache
 
     def read_block(self, dataset: str, grid_position: [int]) -> np.ndarray:
         self._current_cache_block = grid_position
         block_path = os.path.join(self._path, dataset, format_grid_position(grid_position))
         print("get block : " + block_path)
-        self._current_cache_block = fs.read_block(self, block_path)
+        self._current_cache_block = read_block(self, block_path)
         return self._current_cache_block
 
     def write_block(self, block: DataBlock):
         block_path = os.path.join(self._path, block._dataset)
         print("Writing: " + block_path)
-        fs.write_block(self, block_path, format_grid_position(block._grid_position), block)
+        write_block(self, block_path, format_grid_position(block._grid_position), block)
 
     def commit(self):
         self.vc.commit("commit")

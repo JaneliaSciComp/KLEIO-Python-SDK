@@ -1,5 +1,5 @@
 import numpy as np
-from src.kleio.meta import DatasetMetadata
+from ..meta import DatasetMetadata
 
 
 class DataBlock:
