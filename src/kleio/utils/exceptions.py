@@ -33,5 +33,5 @@ class InvalidAccessPermissionError(BaseKleioError):
     _msg = "Invalid Access Permission mode: {0!r} | Should have write permission ! "
 
 
-class IndexOutOfBox(BaseKleioError):
+class IndexOutOfBoxError(BaseKleioError):
     _msg = "Index out of box : {0!r}  "

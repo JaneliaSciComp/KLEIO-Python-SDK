@@ -1,7 +1,8 @@
 import json
 import os
 
-from kleio.config import __version__
+from src.kleio.config import __version__
+
 
 # By convention Field should be named " _NAME "
 class SerializableMetadata:
@@ -91,5 +92,3 @@ class DatasetMetadata(SerializableMetadata):
         self._dimension = dimension
         self._chunk = chunk
         self._dtype = dtype
-
-

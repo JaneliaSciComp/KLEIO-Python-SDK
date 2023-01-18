@@ -2,29 +2,16 @@ import os
 
 import numpy as np
 
-from kleio.stores import fs
-from kleio.stores.abstract import BlocksDataStore, IndexDataStore
-from kleio.stores.abstract import DataBlock
+from src.kleio.stores import fs
+from src.kleio.stores.abstract import BlocksDataStore, IndexDataStore
+from src.kleio.stores.abstract import DataBlock
 from src.kleio.meta import IndexesDataStoreMetadata, BlocksDataStoreMetadata, DatasetMetadata
+from src.kleio.utils.exceptions import KleioNotFoundError, InvalidAccessModeError, IndexOutOfBoxError
 from src.kleio.utils.vc import VCS
-
-
-# block_file_name = "0"
 
 
 def format_grid_position(grid_position):
     return ".".join([str(i) for i in grid_position])
-
-
-# def format_version_path(block_version, dataset):
-#     # dataset/version/x.y.z
-#     return os.path.join(dataset, str(block_version))
-#     # str_grid = format_grid_position(grid_position)
-#     # return os.path.join(path, str_grid)
-#     # dataset/version/x/y/z
-#     # for i in grid_position:
-#     #     path = os.path.join(path, str(i))
-#     # return path
 
 
 class FSBlocksDataStore(BlocksDataStore):
@@ -54,7 +41,7 @@ class FSBlocksDataStore(BlocksDataStore):
     def get_dataset_attributes(self, dataset: str) -> DatasetMetadata:
         return fs.get_dataset_attributes(self, dataset)
 
-    def read_block(self, version: int, dataset: str, grid_position: [int]) ->  np.ndarray:
+    def read_block(self, version: int, dataset: str, grid_position: [int]) -> np.ndarray:
         block_path = os.path.join(self._path, dataset, version, format_grid_position(grid_position))
         return fs.read_block(self, block_path)
 
@@ -123,10 +110,10 @@ class FSIndexDataStore(IndexDataStore):
         self._current_meta_cache = fs.get_dataset_attributes(self, dataset)
         return self._current_meta_cache
 
-    def read_block(self, dataset: str, grid_position: [int]) ->  np.ndarray:
+    def read_block(self, dataset: str, grid_position: [int]) -> np.ndarray:
         self._current_cache_block = grid_position
         block_path = os.path.join(self._path, dataset, format_grid_position(grid_position))
-        print("get block : "+block_path)
+        print("get block : " + block_path)
         self._current_cache_block = fs.read_block(self, block_path)
         return self._current_cache_block
 
@@ -156,7 +143,7 @@ class FSIndexDataStore(IndexDataStore):
     def set_at(self, dataset, position, version):
         meta = self._get_cached_meta(dataset)
         if not is_valid_position(meta._dimension, position):
-            raise IndexOutOfBox("dimension: {} position: {} ".format(str(meta._dimension), str(position)))
+            raise IndexOutOfBoxError("dimension: {} position: {} ".format(str(meta._dimension), str(position)))
 
         grid_position, local_position = get_grid_position(meta._chunk, position)
 

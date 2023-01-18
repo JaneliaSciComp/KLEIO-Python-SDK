@@ -5,8 +5,8 @@ import zarr
 from zarr.storage import NestedDirectoryStore, array_meta_key
 from zarr.n5 import N5FSStore, is_chunk_key
 import numpy as np
-from src.kleio.utils import get_next_id
-from src.kleio.utils import InvalidAccessModeError
+from src.kleio.utils.uid_rest import get_next_id
+from src.kleio.utils.exceptions import InvalidAccessModeError
 from zarr.meta import decode_array_metadata, encode_array_metadata, decode_dtype
 from src.kleio.utils import util
 from zarr.codecs import Zlib
@@ -31,7 +31,7 @@ class ZarrIndexStore(NestedDirectoryStore):
                  compressor=index_default_compressor,
                  filters=None,
                  dtype="i8",
-                 chunk=1):
+                 chunk=64):
         super().__init__(path, normalize_keys, dimension_separator)
         self._chunk = chunk
         self._dtype = dtype

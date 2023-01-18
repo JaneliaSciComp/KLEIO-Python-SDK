@@ -1,6 +1,6 @@
 import numpy as np
 import requests
-from kleio import config
+from src.kleio import config
 
 from requests.exceptions import ConnectTimeout
 

@@ -3,7 +3,7 @@ import time
 
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError
 
-from src.kleio.utils import InvalidCompressionIndexError
+from src.kleio.utils.exceptions import InvalidCompressionIndexError
 
 
 class VCS(object):
