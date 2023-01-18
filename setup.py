@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='kleio',
+    name='pykleio',
     packages=find_packages(exclude=("tests", "examples", "versionedzarrlib", "img")),
     version='0.2.0',
     description='KLEIO versioned Storage',
