@@ -9,11 +9,10 @@
 name: Upload Python Package
 
 on:
-  release:
-    types: [published]
-
-permissions:
-  contents: read
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   deploy:
