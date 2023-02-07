@@ -8,7 +8,7 @@ import numpy as np
 from kleio import config
 from .data import VersionedData, VersionedSession
 from .ssh import RemoteClient
-from src.kleio.utils import VCS
+from kleio import VCS
 
 
 class RemoteVersionedData(VersionedData):

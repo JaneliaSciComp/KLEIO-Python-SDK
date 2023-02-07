@@ -1,7 +1,7 @@
 import unittest
 
-from ..kleio.stores import VersionedFSStore, ZarrIndexStore
-from ..kleio.utils import VCS
+from kleio.stores import VersionedFSStore, ZarrIndexStore
+from kleio.utils import VCS
 import zarr
 import os
 import shutil

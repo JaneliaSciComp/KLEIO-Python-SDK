@@ -5,7 +5,7 @@ from zarr import MetadataError
 from zarr.meta import Metadata2
 from zarr.util import json_dumps
 
-from src.kleio.utils import fromfile, tofile
+from kleio import fromfile, tofile
 
 file_name = "metadata.json"
 

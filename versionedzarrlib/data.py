@@ -7,8 +7,8 @@ import numpy as np
 import zarr
 
 from .metadata import Metadata
-from src.kleio.utils import VCS
-from src.kleio.utils import get_next_id
+from kleio import VCS
+from kleio import get_next_id
 
 
 class VersionedData:

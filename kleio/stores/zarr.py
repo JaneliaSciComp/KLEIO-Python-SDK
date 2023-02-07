@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
 from ..utils.uid_rest import get_next_id
@@ -19,6 +19,62 @@ index_default_compressor = Zlib()
 
 def get_dataset_name(key, dimension_separator="/"):
     return dimension_separator.join(key.split(dimension_separator)[:-1])
+
+
+class N5FSIndexStore(N5FSStore):
+
+    # TODO compression
+    def __init__(self,
+                 path,
+                 normalize_keys=False,
+                 dimension_separator="/",
+                 compressor=index_default_compressor,
+                 filters=None,
+                 dtype="i8",
+                 chunk=64):
+        super().__init__(path, normalize_keys, dimension_separator)
+        self._chunk = chunk
+        self._dtype = dtype
+        self._compressor = compressor
+        self._filters = filters
+        self._vc = VCS(path)
+
+    @property
+    def vc(self):
+        return self._vc
+
+    def create_dataset_for(self, key, value):
+        index_values = self.__format_index_metadata(value)
+        self.__setitem__(key, index_values)
+        dataset_name = get_dataset_name(key, self._dimension_separator)
+        # self.vc.commit("create dataset: {}".format(dataset_name))
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        if not self._vc.is_git_repo():
+            self._vc.init_repo()
+        # if len(self._vc.untracked_files()) > 0:
+        #     self._vc.commit_all()
+
+    # def setitems(self, values):
+    #     print("set items: {}".format(values))
+
+    # TODO look for the perfect chunk size
+    def __format_index_metadata(self, value):
+        value = decode_array_metadata(value)
+        array_chunks = value["chunks"]
+        array_shape = value["shape"]
+        # TODO Fix this with min size
+        index_chunks = [self._chunk] * len(array_chunks)
+        dims = util.get_nb_chunks(array_shape, array_chunks)
+        value["chunks"] = tuple(index_chunks)
+        value["dtype"] = decode_dtype(self._dtype)
+        value["compressor"] = self._compressor.get_config()
+        value["shape"] = tuple(dims)
+        value["filters"] = self._filters
+        result = encode_array_metadata(value)
+        print("create index dataset: {}".format(value))
+        return result
 
 
 class ZarrIndexStore(NestedDirectoryStore):
@@ -92,7 +148,7 @@ def normalize_versioned_chunk_key(key, version) -> str:
 
 class VersionedFSStore(N5FSStore):
 
-    def __init__(self, index_store: ZarrIndexStore, *args, **kwargs):
+    def __init__(self, index_store: Union[ZarrIndexStore, N5FSIndexStore], *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self.index_store = Array(index_store)
         self._index_store = index_store

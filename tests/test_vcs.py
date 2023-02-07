@@ -2,8 +2,8 @@ import unittest
 
 from git import NoSuchPathError
 
-from ..kleio.utils import VCS
-from ..kleio.utils.exceptions import InvalidCompressionIndexError
+from kleio.utils import VCS
+from kleio.utils import InvalidCompressionIndexError
 
 
 class VCSTestCase(unittest.TestCase):
