@@ -8,6 +8,26 @@ To enable block-based data versioning for nd data, a mix is created of:
 - Version block index using [Zarr](https://zarr.readthedocs.io/en/stable/) + [Git](https://git-scm.com/)
 - A key value store: using [N5](https://github.com/saalfeldlab/n5) for now
 
+### How to:
+```
+index_store = ZarrIndexStore(INDEX_PATH)
+store = VersionedFSStore(index_store, RAW_PATH)
+
+z = zarr.open(store, mode="a")
+
+# Commit
+store.vc.commit()
+
+# Push
+store.vc.push()
+
+# Create new branch
+store.vc.create_new_branch(BRANCH_NAME)
+
+# Checkout new branch
+store.vc.create_new_branch(BRANCH_NAME)
+```
+
 
 ### Features:
 - Multiple branches
