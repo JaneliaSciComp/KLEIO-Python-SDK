@@ -121,40 +121,10 @@ class VCS(object):
             # print("Moved to branch: {}".format(branch_name))
             repo.git.checkout(branch_name)
 
-    def clone_to(self, dist_path):
-        Repo.clone_from(self._path, dist_path)
-        print("cloned.")
-
     def gc(self):
         """Collect garbage, to be run every while """
         repo = Repo.init(self._path)
         repo.git.gc()
-
-    @staticmethod
-    def push_repo(path):
-        repo = Repo(path)
-        repo.git.push()
-
-    # TODO remote change
-
-    # @staticmethod
-    # def push_repo(path, client: RemoteClient):
-    #     repo = Repo(path)
-    #     repo.git.push(env={
-    #         f"GIT_SSH_COMMAND": f"sshpass -p {client.password} ssh -l {client.user}"})
-    #
-    # @classmethod
-    # def remote_clone(cls, remote_client: RemoteClient, remote_path, path):
-    #     try:
-    #         repo = Repo.clone_from(f"ssh://{remote_client.host}:{remote_path}",
-    #                                path, env={
-    #                 "GIT_SSH_COMMAND": f"sshpass -p {remote_client.password} ssh -l {remote_client.user}"})
-    #     except Exception as e:
-    #         # TODO don't use Exception / raise or recover
-    #         print("Error!")
-    #         print(e)
-    #     else:
-    #         print("Repo cloned successfully!")
 
     @classmethod
     def make_bare(cls, path):
