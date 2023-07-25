@@ -1,5 +1,5 @@
 import math
-
+import json
 
 def read_file(fn):
     with open(fn, 'rb') as f:
@@ -23,3 +23,4 @@ def decode_key_into_dataset_position(key: str, dataset_separator="/", dimension_
     last_part = segments[-1]
     grid_position = [int(k) for k in last_part.split(dimension_separator)]
     return result_dataset, tuple(grid_position)
+

@@ -5,6 +5,10 @@ class BaseKleioError(Exception):
         super().__init__(self._msg.format(*args))
 
 
+class TmpVersionException(BaseKleioError):
+    _msg = "{}"
+
+
 class InvalidDataDaskFillError(BaseKleioError):
     _msg = "Invalid data type for fill: {0!r}"
 

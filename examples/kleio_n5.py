@@ -1,5 +1,8 @@
 import zarr
 from numcodecs import Zstd
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from kleio.stores import VersionedFSStore, N5FSIndexStore
 
@@ -16,7 +19,7 @@ if os.path.exists(kleio_n5_kv):
     shutil.rmtree(kleio_n5_kv)
 
 index_store = N5FSIndexStore(kleio_n5_indexes)
-store = VersionedFSStore(index_store, kleio_n5_kv, auto_mkdir=True)
+store = VersionedFSStore(index_store, kleio_n5_kv)
 
 z = zarr.open(store, mode="a")
 z.create_dataset("test", shape=(10, 10), chunks=(5, 5), compressor=compressor)
@@ -28,7 +31,24 @@ print("set dataset")
 # x[:] = dummy_data
 x[[0, 0, 0], [0, 2, 3]] = 5
 
+store.vc.commit_all()
+
 x[0:6, 2:8] = 8
+store.vc.commit_all()
+
+z.create_dataset("test2", shape=(10, 10), chunks=(5, 5), compressor=compressor)
+x = z["test2"]
+# all = x[:]
+# print("type: {}: ".format(type(z["test"])))
+# print(type(z["test"][:]))xcode-select --install
+print("set dataset")
+# x[:] = dummy_data
+x[[0, 0, 0], [0, 2, 3]] = 5
+
+store.vc.commit_all()
+
+x[0:6, 2:8] = 8
+store.vc.commit_all()
 # x[6, 8] = 5
 print("read dataset")
 print(z["test"][:])

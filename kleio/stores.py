@@ -1,16 +1,15 @@
 from typing import Any, Union
 
 import numpy as np
-from ..utils.uid_rest import get_next_id
-from ..utils.exceptions import InvalidAccessModeError
-from ..utils import util
-from ..utils.vc import VCS
-
 import zarr
-from zarr.storage import NestedDirectoryStore, array_meta_key
-from zarr.n5 import N5FSStore, is_chunk_key
 from zarr.codecs import Zlib
 from zarr.meta import decode_array_metadata, encode_array_metadata, decode_dtype
+from zarr.n5 import N5FSStore, is_chunk_key
+from zarr.storage import NestedDirectoryStore, array_meta_key
+
+from kleio.utils import util
+from kleio.utils.exceptions import InvalidAccessModeError, TmpVersionException
+from kleio.utils.vc import VCS
 
 index_default_dtype = "i8"
 index_default_chunk = 64
@@ -152,7 +151,7 @@ class VersionedFSStore(N5FSStore):
         super().__init__(*args, **kwargs)
         # self.index_store = Array(index_store)
         self._index_store = index_store
-        self.__current_version: np.uint64 = None
+        # self.__current_version: np.uint64 = None
         self.__index_array = None
 
     @property
@@ -167,9 +166,10 @@ class VersionedFSStore(N5FSStore):
 
     @property
     def current_version(self):
-        if self.__current_version is None:
-            self.__current_version = self._increment_version()
-        return self.__current_version
+        current = self.vc.current_version.current
+        if current is None:
+            raise TmpVersionException("Current version is None")
+        return current
 
     # Arrays check is this method exist, if not, arrays load the chunk blocks implemented to append the version ID to
     # the path of the block dataset/VERSION/chunk_id
@@ -217,10 +217,6 @@ class VersionedFSStore(N5FSStore):
         else:
             self._index_store.__setitem__(key, value)
         super().__setitem__(key, value)
-
-    def _increment_version(self):
-        self.__current_version = get_next_id()
-        return self.current_version
 
     def _get_version_for(self, key):
         dataset, position = util.decode_key_into_dataset_position(key)

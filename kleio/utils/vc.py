@@ -4,6 +4,7 @@ import time
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError
 
 from .exceptions import InvalidCompressionIndexError
+from .version import Version
 
 
 class VCS(object):
@@ -24,11 +25,13 @@ class VCS(object):
         self._path = path
         self._compression = compression
         self._repo = None
+        self.current_version = None
 
     @property
     def repo(self):
         if self._repo is None:
             self._repo = Repo(self._path)
+            self.current_version = Version(self._path)
         return self._repo
 
     def is_git_repo(self):
@@ -59,7 +62,7 @@ class VCS(object):
             cw.set("receive", "denyCurrentBranch", "false")
             # for newer git version use (2.3.6)
             # cw.set("receive", "denyCurrentBranch", "updateInstead")
-
+        self.current_version = Version(self._path, create=True)
         # self.commit('Initial commit')
 
     def add_all(self):
@@ -79,6 +82,7 @@ class VCS(object):
         """commit staged changes , need add() before
         :param message: commit message. """
         self.repo.index.commit(message)
+        self.current_version.increment()
 
     def commit_all(self, message: str = None):
         """commit staged changes , need add() before
@@ -88,6 +92,7 @@ class VCS(object):
             message = "-".join(files)
         self.repo.git.add(all=True)
         self.repo.index.commit(message)
+        self.current_version.increment()
 
     def show_history(self):
         """ Show git history """
@@ -156,3 +161,4 @@ class VCS(object):
         repo = Repo(path)
         with repo.config_writer() as cw:
             cw.set("core", "bare", "true")
+
